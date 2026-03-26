@@ -1361,21 +1361,26 @@ function useSplitPanes() {
 
 function launchServiceTerminal(key, scriptPath) {
   const emulator = detectTerminalEmulator();
-  const shell = getShellPath();
   const splitPanes = useSplitPanes();
   const cleanEnv = { ...process.env };
   delete cleanEnv.PORT; // Don't leak dashboard PORT to child services
   const spawnOpts = { detached: true, stdio: 'ignore', env: cleanEnv };
 
+  // Choose shell based on script type
+  const isPowerShell = isWindows && scriptPath.endsWith('.ps1');
+  const shell = isPowerShell ? 'powershell.exe' : getShellPath();
+  const shellArgs = isPowerShell ? ['-NoExit', '-File'] : [];
+
   if (emulator === 'windows-terminal') {
     const winScriptPath = scriptPath.replace(/\//g, '\\');
+    const cmdArgs = [...shellArgs, winScriptPath];
     if (splitPanes && !serviceTabCreated) {
-      spawn('wt.exe', ['-w', '0', 'new-tab', '--title', SERVICE_TAB_TITLE, shell, winScriptPath], spawnOpts).unref();
+      spawn('wt.exe', ['-w', '0', 'new-tab', '--title', SERVICE_TAB_TITLE, shell, ...cmdArgs], spawnOpts).unref();
       serviceTabCreated = true;
     } else if (splitPanes) {
-      spawn('wt.exe', ['-w', '0', 'split-pane', '--horizontal', '--title', `${CONFIG.name || 'Dev'} ${key}`, shell, winScriptPath], spawnOpts).unref();
+      spawn('wt.exe', ['-w', '0', 'split-pane', '--horizontal', '--title', `${CONFIG.name || 'Dev'} ${key}`, shell, ...cmdArgs], spawnOpts).unref();
     } else {
-      spawn('wt.exe', ['-w', '0', 'new-tab', '--title', `${CONFIG.name || 'Dev'} ${key}`, shell, winScriptPath], spawnOpts).unref();
+      spawn('wt.exe', ['-w', '0', 'new-tab', '--title', `${CONFIG.name || 'Dev'} ${key}`, shell, ...cmdArgs], spawnOpts).unref();
     }
 
   } else if (emulator === 'macos-terminal') {
@@ -1422,6 +1427,15 @@ function launchServiceTerminal(key, scriptPath) {
   }
 }
 
+function resolveRunScript(key) {
+  if (isWindows) {
+    const ps1 = join(__dirname, `run-${key}.ps1`);
+    if (existsSync(ps1)) return ps1;
+  }
+  const sh = join(__dirname, `run-${key}.sh`);
+  return existsSync(sh) ? sh : null;
+}
+
 app.post('/api/services/start', express.json(), async (req, res) => {
   const key = req.body && req.body.key;
   const def = LOG_DEFS[key];
@@ -1432,9 +1446,9 @@ app.post('/api/services/start', express.json(), async (req, res) => {
     return res.json({ ok: true, already: true });
   }
 
-  const scriptPath = join(__dirname, `run-${key}.sh`);
-  if (!existsSync(scriptPath)) {
-    return res.status(404).json({ error: `run-${key}.sh not found` });
+  const scriptPath = resolveRunScript(key);
+  if (!scriptPath) {
+    return res.status(404).json({ error: `run-${key}.ps1 / run-${key}.sh not found` });
   }
 
   try {
@@ -1526,9 +1540,9 @@ app.post('/api/services/restart', express.json(), async (req, res) => {
   }
 
   // Start
-  const scriptPath = join(__dirname, `run-${key}.sh`);
-  if (!existsSync(scriptPath)) {
-    return res.status(404).json({ error: `run-${key}.sh not found` });
+  const scriptPath = resolveRunScript(key);
+  if (!scriptPath) {
+    return res.status(404).json({ error: `run-${key}.ps1 / run-${key}.sh not found` });
   }
 
   try {

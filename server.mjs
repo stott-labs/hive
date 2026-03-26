@@ -6,7 +6,7 @@ import { createReadStream } from 'node:fs';
 import { join, dirname, relative, normalize, sep, isAbsolute } from 'node:path';
 import { homedir, userInfo } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { existsSync, readFileSync, readdirSync, statSync, lstatSync, readlinkSync, mkdirSync, writeFileSync, watch, unlinkSync, renameSync, rmdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, lstatSync, readlinkSync, mkdirSync, writeFileSync, copyFileSync, watch, unlinkSync, renameSync, rmdirSync } from 'node:fs';
 import vm from 'node:vm';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -20,9 +20,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Load dashboard config — all project-specific values come from this file
 // ---------------------------------------------------------------------------
 const CONFIG_PATH = join(__dirname, 'dashboard.config.json');
+const CONFIG_EXAMPLE_PATH = join(__dirname, 'dashboard.config.example.json');
 if (!existsSync(CONFIG_PATH)) {
-  console.error('ERROR: dashboard.config.json not found. Copy dashboard.config.example.json and customize it.');
-  process.exit(1);
+  if (existsSync(CONFIG_EXAMPLE_PATH)) {
+    copyFileSync(CONFIG_EXAMPLE_PATH, CONFIG_PATH);
+    console.warn('⚠  dashboard.config.json not found — created from example. Open Settings to configure.');
+  } else {
+    console.error('ERROR: dashboard.config.json not found. Copy dashboard.config.example.json and customize it.');
+    process.exit(1);
+  }
 }
 let CONFIG = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8').replace(/^\uFEFF/, ''));
 

@@ -16,8 +16,7 @@ const SETTINGS_SECTIONS = [
     fields: [
       { key: 'name', label: 'Project Name', type: 'text', placeholder: 'My Project' },
       { key: 'title', label: 'Dashboard Title', type: 'text', placeholder: 'Dev Dashboard' },
-      { key: 'basePaths.windows', label: 'Windows Base Path', type: 'text', placeholder: 'C:\\Users\\you\\Projects' },
-      { key: 'basePaths.mac', label: 'macOS Base Path', type: 'text', placeholder: '/Users/you/Projects' },
+      { key: 'projectsDir', label: 'Projects Directory', type: 'text', placeholder: 'C:\\Users\\you\\Projects', help: 'Absolute path to the folder containing all your repos' },
       { key: 'logDir', label: 'Log Directory', type: 'text', placeholder: '.devdash/logs', help: 'Relative to home directory' },
       { key: 'dbRepo', label: 'DB Repo Directory', type: 'text', placeholder: 'my-db' },
       { key: 'cliRepo', label: 'CLI Repo Directory', type: 'text', placeholder: 'my-cli' },

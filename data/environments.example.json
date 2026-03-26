@@ -1,0 +1,18 @@
+[
+  {
+    "id": "local",
+    "name": "Local",
+    "apiUrl": "http://localhost:3000",
+    "webUrl": "http://localhost:8080",
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret"
+  },
+  {
+    "id": "staging",
+    "name": "Staging",
+    "apiUrl": "https://api-staging.yourapp.com",
+    "webUrl": "https://staging.yourapp.com",
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret"
+  }
+]

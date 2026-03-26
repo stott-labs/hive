@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <!-- Docs tab: syntax highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/catppuccin/highlightjs@1.0.0/css/catppuccin-mocha.css">
+  <!-- GridStack.js for draggable dashboard layout -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-extra.min.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <svg class="header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <h1 id="dashboard-title">Dev Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <button class="search-trigger-btn" id="search-trigger-btn" title="Search across repos (Ctrl+Shift+F)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <div class="bookmarks-dropdown" id="bookmarks-dropdown">
+        <button class="bookmarks-btn" id="bookmarks-btn" title="Bookmarks">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <div class="bookmarks-menu" id="bookmarks-menu">
+          <!-- Bookmarks and quick actions populated dynamically from config -->
+        </div>
+      </div>
+      <button class="copilot-toggle-btn" id="copilot-toggle-btn" title="Toggle Copilot Chat">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </button>
+      <time class="header-time" id="clock"></time>
+    </div>
+  </header>
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab active" data-tab="dashboard" draggable="true">Dashboard</button>
+    <button class="tab" data-tab="repo" draggable="true">Repo</button>
+    <button class="tab" data-tab="docs" draggable="true">Docs</button>
+    <button class="tab" data-tab="swagger" draggable="true">Endpoints</button>
+    <button class="tab" data-tab="database" draggable="true">Database</button>
+    <button class="tab tab-settings" data-tab="settings">&#9881; Settings</button>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- Main area: tab content (left, flex:1) + Copilot panel (right, persistent) -->
+  <!-- ============================================================ -->
+  <div class="main-area">
+  <div class="tab-content">
+
+  <!-- ============================================================ -->
+  <!-- TAB: Dashboard -->
+  <!-- ============================================================ -->
+  <div class="tab-pane active" id="tab-dashboard">
+    <!-- Zombie Process Alert (hidden when empty) — kept above grid -->
+    <div id="zombie-alert"></div>
+
+    <!-- Dashboard Tab Strip -->
+    <div class="dashboard-tab-strip" id="dashboard-tab-strip"></div>
+
+    <!-- Dashboard Toolbar -->
+    <div class="dashboard-toolbar">
+      <button class="btn layout-btn" id="layout-save-btn" title="Save current layout">Save</button>
+      <div style="position:relative">
+        <button class="btn layout-btn" id="template-btn" title="Apply a saved dashboard template">Templates &#9662;</button>
+        <div class="template-dropdown" id="template-dropdown" style="display:none"></div>
+      </div>
+      <button class="btn layout-btn" id="template-save-btn" title="Save current layout as a reusable template">Save as Template&hellip;</button>
+      <div class="toolbar-divider"></div>
+      <button class="btn" id="add-widget-btn">+ Add Widget</button>
+      <div class="widget-picker-dropdown" id="widget-picker-dropdown"></div>
+      <button class="btn" id="lock-layout-btn">&#128275; Unlocked</button>
+    </div>
+
+    <!-- GridStack Container -->
+    <div class="grid-stack" id="dashboard-grid"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB: Docs -->
+  <!-- ============================================================ -->
+  <div class="tab-pane" id="tab-docs">
+    <div class="docs-layout">
+      <aside class="docs-sidebar" id="docs-sidebar" style="width:280px">
+        <div class="docs-search">
+          <input type="text" id="docs-search-input" placeholder="Search docs..." />
+        </div>
+        <div class="docs-toolbar">
+          <button class="btn btn-quick docs-toolbar-btn" id="docs-refresh-btn" title="Refresh tree (bust cache)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+          <button class="btn btn-quick docs-toolbar-btn" id="docs-new-file-btn" title="Create new file">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            File
+          </button>
+          <button class="btn btn-quick docs-toolbar-btn" id="docs-new-folder-btn" title="Create new folder">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            Folder
+          </button>
+        </div>
+        <div class="docs-git-bar">
+          <button class="btn btn-quick docs-git-btn" id="docs-pull-btn" title="Pull latest from remote">Pull</button>
+          <button class="btn btn-quick docs-git-btn" id="docs-push-btn" title="Commit & push changes to remote">Push</button>
+          <span class="docs-git-status" id="docs-git-status"></span>
+        </div>
+        <div class="docs-tree" id="docs-tree"></div>
+      </aside>
+      <div class="docs-sidebar-resizer" id="docs-sidebar-resizer"></div>
+      <div class="docs-main">
+        <div class="docs-tab-bar" id="docs-tab-bar" style="display:none"></div>
+        <main class="docs-content" id="docs-content">
+          <div class="docs-placeholder">Select a document from the sidebar to begin reading.</div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB: Endpoints (API Client) -->
+  <!-- ============================================================ -->
+  <div class="tab-pane" id="tab-swagger">
+    <div class="api-client-layout">
+      <div class="api-main">
+        <!-- Sidebar -->
+        <aside class="api-sidebar" id="api-sidebar">
+          <div class="api-env-bar">
+            <select id="api-env-select" class="api-env-select"></select>
+            <button class="btn api-btn-gear" id="api-env-gear" title="Manage Environments">&#9881;</button>
+          </div>
+          <div class="api-sidebar-tabs">
+            <button class="api-sidebar-tab active" data-sidebar="collections">Collections</button>
+            <button class="api-sidebar-tab" data-sidebar="history">History</button>
+            <button class="api-sidebar-tab" data-sidebar="browse">Browse API</button>
+          </div>
+          <div class="api-sidebar-content" id="api-sidebar-collections">
+            <div class="api-sidebar-actions">
+              <button class="btn btn-quick" id="api-new-collection">+ Collection</button>
+              <button class="btn btn-quick" id="api-import-btn">Import</button>
+            </div>
+            <div class="api-collections-search">
+              <input type="text" id="api-collections-filter" placeholder="Filter requests..." />
+            </div>
+            <div class="api-collections-tree" id="api-collections-tree"></div>
+          </div>
+          <div class="api-sidebar-content" id="api-sidebar-history" style="display:none">
+            <div class="api-history-list" id="api-history-list"></div>
+          </div>
+          <div class="api-sidebar-content" id="api-sidebar-browse" style="display:none">
+            <div class="api-browse-toolbar">
+              <input type="text" id="api-browse-filter" placeholder="Filter endpoints..." />
+              <button class="btn btn-quick" id="api-browse-refresh">Refresh</button>
+            </div>
+            <div class="api-browse-import-bar">
+              <button class="btn btn-quick" id="api-import-all">Import All as Collection</button>
+            </div>
+            <div class="api-browse-list" id="api-browse-list"></div>
+          </div>
+        </aside>
+
+        <!-- Sidebar Resize Handle -->
+        <div class="api-sidebar-resizer" id="api-sidebar-resizer"></div>
+
+        <!-- Workspace (tabs + request bar + panels) -->
+        <div class="api-workspace-wrap">
+          <!-- Open request tabs -->
+          <div class="api-open-tabs-bar" id="api-open-tabs-bar"></div>
+
+          <!-- Request Bar -->
+          <div class="api-request-bar">
+            <select id="api-method" class="api-method-select">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="PATCH">PATCH</option>
+              <option value="DELETE">DELETE</option>
+              <option value="HEAD">HEAD</option>
+              <option value="OPTIONS">OPTIONS</option>
+            </select>
+            <div class="api-url-wrap">
+              <input type="text" id="api-url" class="api-url-input" placeholder="{{baseUrl}}/api/endpoint" />
+            </div>
+            <select id="api-timeout" class="api-timeout-select" title="Request timeout">
+              <option value="30000">30s</option>
+              <option value="60000">60s</option>
+              <option value="120000">2m</option>
+              <option value="300000">5m</option>
+              <option value="600000" selected>10m</option>
+            </select>
+            <button class="btn api-btn-send" id="api-send">Send</button>
+            <button class="btn api-btn-save" id="api-save" title="Save (Ctrl+S)">Save</button>
+            <button class="btn api-btn-save-as" id="api-save-as" title="Save As...">Save As</button>
+          </div>
+
+          <div class="api-workspace">
+            <!-- Request Panel -->
+            <div class="api-request-panel" id="api-request-panel">
+              <div class="api-tabs api-request-tabs">
+                <button class="api-tab" data-reqtab="docs">Docs</button>
+                <button class="api-tab active" data-reqtab="params">Params</button>
+                <button class="api-tab" data-reqtab="headers">Headers</button>
+                <button class="api-tab" data-reqtab="auth">Auth</button>
+                <button class="api-tab" data-reqtab="body">Body</button>
+                <button class="api-tab" data-reqtab="pre-script">Pre-Script</button>
+                <button class="api-tab" data-reqtab="tests">Tests</button>
+              </div>
+              <div class="api-tab-content" id="api-reqtab-docs" style="display:none"></div>
+              <div class="api-tab-content" id="api-reqtab-params"></div>
+              <div class="api-tab-content" id="api-reqtab-headers" style="display:none"></div>
+              <div class="api-tab-content" id="api-reqtab-auth" style="display:none"></div>
+              <div class="api-tab-content" id="api-reqtab-body" style="display:none"></div>
+              <div class="api-tab-content" id="api-reqtab-pre-script" style="display:none"></div>
+              <div class="api-tab-content" id="api-reqtab-tests" style="display:none"></div>
+            </div>
+
+            <!-- Resizable Divider -->
+            <div class="api-divider" id="api-divider"></div>
+
+            <!-- Response Panel -->
+            <div class="api-response-panel" id="api-response-panel">
+              <div class="api-response-bar" id="api-response-bar">
+                <span class="api-response-placeholder">Hit Send to get a response</span>
+              </div>
+              <div class="api-tabs api-response-tabs" id="api-response-tabs" style="display:none">
+                <button class="api-tab active" data-restab="body">Body</button>
+                <button class="api-tab" data-restab="headers">Headers</button>
+                <button class="api-tab" data-restab="test-results">Test Results</button>
+                <button class="api-tab" data-restab="console">Console</button>
+              </div>
+              <div class="api-tab-content api-response-body" id="api-restab-body" style="display:none"></div>
+              <div class="api-tab-content" id="api-restab-headers" style="display:none"></div>
+              <div class="api-tab-content" id="api-restab-test-results" style="display:none"></div>
+              <div class="api-tab-content" id="api-restab-console" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB: Database Explorer -->
+  <!-- ============================================================ -->
+  <div class="tab-pane" id="tab-database">
+    <div class="db-layout">
+      <div class="db-main">
+        <!-- Sidebar -->
+        <aside class="db-sidebar" id="db-sidebar">
+          <div class="db-sidebar-tabs">
+            <button class="db-sidebar-tab active" data-dbsidebar="schema">Schema</button>
+            <button class="db-sidebar-tab" data-dbsidebar="history">History</button>
+          </div>
+          <div class="db-sidebar-content" id="db-sidebar-schema">
+            <div class="db-schema-pane" id="db-schema-pane">
+              <div class="db-search">
+                <input type="text" id="db-search-input" placeholder="Filter tables..." />
+              </div>
+              <div class="db-tree" id="db-tree">
+                <div class="skeleton"><div class="skeleton-row"><div class="skeleton-bar w-lg"></div></div><div class="skeleton-row"><div class="skeleton-bar w-xl"></div></div><div class="skeleton-row"><div class="skeleton-bar w-md"></div></div></div>
+              </div>
+            </div>
+            <div class="db-scripts-resizer" id="db-scripts-resizer"></div>
+            <div class="db-scripts-pane" id="db-scripts-pane">
+              <div class="db-scripts-header">
+                <span class="db-scripts-title">Scripts</span>
+                <button class="btn db-scripts-btn" id="db-scripts-new-file" title="New Script">+</button>
+                <button class="btn db-scripts-btn" id="db-scripts-new-folder" title="New Folder">&#128193;+</button>
+                <button class="btn db-scripts-btn" id="db-scripts-import-zip" title="Import .zip">&#128230;</button>
+                <input type="file" id="db-scripts-zip-input" accept=".zip" style="display:none" />
+              </div>
+              <div class="db-scripts-tree" id="db-scripts-tree"></div>
+            </div>
+          </div>
+          <div class="db-sidebar-content" id="db-sidebar-history" style="display:none">
+            <div class="db-history-list" id="db-history-list"></div>
+          </div>
+          <div class="db-status-bar" id="db-status-bar">
+            <span class="db-status-dot" id="db-status-dot"></span>
+            <select id="db-conn-select" class="db-conn-select"></select>
+            <button class="btn db-btn-gear" id="db-conn-gear" title="Manage Connections">&#9881;</button>
+            <span id="db-status-text">Connecting...</span>
+          </div>
+        </aside>
+
+        <!-- Sidebar Resize Handle -->
+        <div class="db-sidebar-resizer" id="db-sidebar-resizer"></div>
+
+        <!-- Workspace -->
+        <div class="db-workspace-wrap">
+          <!-- Query tab bar -->
+          <div class="db-query-tab-bar" id="db-query-tab-bar"></div>
+          <!-- Editor Panel -->
+          <div class="db-editor-panel" id="db-editor-panel">
+            <div class="db-editor-toolbar">
+              <button class="btn db-btn-execute" id="db-execute" title="Execute (Ctrl+Enter)">Execute</button>
+              <label class="db-write-mode-label" id="db-write-mode-label">
+                <input type="checkbox" id="db-write-mode" />
+                <span>Write Mode</span>
+              </label>
+              <span class="db-script-breadcrumb" id="db-script-breadcrumb"></span>
+              <span class="db-query-time" id="db-query-time"></span>
+            </div>
+            <textarea class="db-editor" id="db-editor" placeholder="SELECT * FROM ..." spellcheck="false"></textarea>
+          </div>
+
+          <!-- Resizable Divider -->
+          <div class="db-divider" id="db-divider"></div>
+
+          <!-- Results Panel -->
+          <div class="db-results-panel" id="db-results-panel">
+            <div class="db-results-bar" id="db-results-bar">
+              <span class="db-results-info" id="db-results-info">Run a query to see results</span>
+              <button class="btn db-btn-addrow" id="db-add-row" style="display:none">+ Add Row</button>
+              <button class="btn db-btn-export" id="db-export" style="display:none">Export CSV</button>
+            </div>
+            <div class="db-results-wrap" id="db-results-wrap">
+              <div class="db-results-placeholder">Results will appear here</div>
+            </div>
+            <div class="db-error" id="db-error" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB: Repo Viewer -->
+  <!-- ============================================================ -->
+  <div class="tab-pane" id="tab-repo">
+    <div class="repo-layout">
+      <aside class="repo-sidebar">
+        <div class="repo-sidebar-header">
+          <select id="repo-select" class="repo-select"><option value="">Select a repo…</option></select>
+          <button id="repo-new-file-btn" class="repo-sidebar-action-btn" title="New file">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </button>
+        </div>
+        <div class="repo-search-panel" id="repo-search-panel">
+          <div class="repo-search-bar" id="repo-search-bar">
+            <svg class="repo-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="repo-search-input" class="repo-search-input" placeholder="Search files & content…" spellcheck="false" autocomplete="off" />
+            <button id="repo-search-clear" class="repo-search-clear" title="Clear search" style="display:none">×</button>
+            <button id="repo-search-expand" class="repo-search-expand" title="Toggle replace & filters">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
+          <div class="repo-search-advanced" id="repo-search-advanced" style="display:none">
+            <div class="repo-search-replace-row">
+              <svg class="repo-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              <input id="repo-replace-input" class="repo-search-input" placeholder="Replace…" spellcheck="false" autocomplete="off" />
+              <button id="repo-replace-all-btn" class="repo-search-action-btn" title="Replace All">All</button>
+            </div>
+            <div class="repo-search-filter-row">
+              <input id="repo-search-include" class="repo-search-filter-input" placeholder="files to include (e.g. *.ts)" spellcheck="false" autocomplete="off" />
+            </div>
+            <div class="repo-search-filter-row">
+              <input id="repo-search-exclude" class="repo-search-filter-input" placeholder="files to exclude (e.g. *.spec.*)" spellcheck="false" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+        <div class="repo-tree" id="repo-tree">
+          <div class="repo-tree-empty">Select a repo to browse files</div>
+        </div>
+      </aside>
+      <div class="repo-sidebar-resizer" id="repo-sidebar-resizer"></div>
+      <div class="repo-editor-area">
+        <div class="repo-tab-bar" id="repo-open-tabs"></div>
+        <div class="repo-editor-toolbar" id="repo-editor-toolbar"></div>
+        <div class="repo-editor-wrap">
+          <div class="repo-empty" id="repo-empty">
+            <span>Select a file to begin editing</span>
+            <span class="repo-empty-hint">Alt+\ triggers AI completion · Ctrl+S saves</span>
+          </div>
+          <div id="repo-editor-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB: Settings -->
+  <!-- ============================================================ -->
+  <div class="tab-pane" id="tab-settings">
+    <div class="settings-layout" id="settings-content"></div>
+  </div>
+
+  </div><!-- /.tab-content -->
+
+  <!-- ============================================================ -->
+  <!-- Persistent Copilot Panel (always-visible right side) -->
+  <!-- ============================================================ -->
+  <aside class="copilot-panel" id="copilot-panel">
+    <!-- Drag handle on the left edge to resize -->
+    <div class="copilot-resize-handle" id="copilot-resize-handle"></div>
+    <!-- Icon strip shown only when collapsed -->
+    <div class="copilot-collapsed-icon" id="copilot-collapsed-icon" title="Open Copilot Chat">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </div>
+    <div class="copilot-panel-body">
+      <div class="copilot-layout">
+        <!-- Header bar -->
+        <div class="copilot-header">
+          <div class="copilot-header-left">
+            <svg id="copilot-logo-btn" width="15" height="15" viewBox="0 0 16 16" fill="var(--blue)" style="flex-shrink:0;cursor:pointer" title="Minimize Copilot"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            <span class="copilot-title">Copilot Chat</span>
+          </div>
+          <div class="copilot-header-right">
+            <select id="copilot-model-select" class="copilot-model-select" title="Switch model"></select>
+            <button class="copilot-new-chat-btn" id="copilot-new-chat" title="New chat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span class="copilot-new-chat-label">New chat</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages area -->
+        <div class="copilot-messages" id="copilot-messages">
+          <!-- populated by copilot.js -->
+        </div>
+
+        <!-- Input area -->
+        <div class="copilot-input-area">
+          <!-- Attached context chips -->
+          <div class="copilot-attachments" id="copilot-attachments" style="display:none"></div>
+          <!-- Textarea -->
+          <div class="copilot-textarea-wrap">
+            <textarea id="copilot-input" class="copilot-textarea" placeholder="Ask Copilot…" rows="1" spellcheck="false"></textarea>
+          </div>
+          <!-- Action bar -->
+          <div class="copilot-action-bar">
+            <div class="copilot-attach-btns">
+              <button class="copilot-attach-btn" id="copilot-attach-sentry" title="Attach recent Sentry issues">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Sentry
+              </button>
+              <button class="copilot-attach-btn" id="copilot-attach-file" title="Attach current file from Repo viewer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                File
+              </button>
+              <button class="copilot-attach-btn" id="copilot-attach-git" title="Attach git status">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+                Git
+              </button>
+              <button class="copilot-attach-btn" id="copilot-attach-docs" title="Attach all open Docs tabs">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Docs
+              </button>
+              <button class="copilot-attach-btn" id="copilot-attach-endpoint" title="Attach active API request + response">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                Endpoint
+              </button>
+              <button class="copilot-attach-btn" id="copilot-attach-db" title="Attach current DB query + schema">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+                DB
+              </button>
+            </div>
+            <button class="copilot-send-btn" id="copilot-send" title="Send (Enter)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  </div><!-- /.main-area -->
+
+  <!-- Database Connection Manager Modal -->
+  <div class="api-modal-overlay" id="db-conn-modal" style="display:none">
+    <div class="api-modal api-env-manager">
+      <div class="api-modal-header">
+        <h3>Connection Manager</h3>
+        <button class="api-modal-close" id="db-conn-modal-close">&times;</button>
+      </div>
+      <div class="api-env-modal-body">
+        <div class="api-env-list-panel">
+          <div class="api-env-list" id="db-conn-list"></div>
+        </div>
+        <div class="api-env-editor-panel" id="db-conn-editor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="db-toast-container" id="db-toast-container"></div>
+
+  <!-- Environment Manager Modal -->
+  <div class="api-modal-overlay" id="api-env-modal" style="display:none">
+    <div class="api-modal api-env-manager">
+      <div class="api-modal-header">
+        <h3>Environment Manager</h3>
+        <button class="api-modal-close" id="api-env-modal-close">&times;</button>
+      </div>
+      <div class="api-env-modal-body">
+        <div class="api-env-list-panel">
+          <div class="api-env-list" id="api-env-list"></div>
+          <button class="btn btn-quick" id="api-env-add">+ Add Environment</button>
+        </div>
+        <div class="api-env-editor-panel" id="api-env-editor"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Request Modal -->
+  <div class="api-modal-overlay" id="api-save-modal" style="display:none">
+    <div class="api-modal api-save-dialog">
+      <div class="api-modal-header">
+        <h3>Save Request</h3>
+        <button class="api-modal-close" id="api-save-modal-close">&times;</button>
+      </div>
+      <div class="api-save-body">
+        <label class="api-save-label">Request Name</label>
+        <input type="text" id="api-save-name" class="api-save-input" placeholder="My Request" />
+        <label class="api-save-label">Save to</label>
+        <div class="api-save-tree" id="api-save-tree"></div>
+        <div class="api-save-actions">
+          <button class="btn api-btn-send" id="api-save-confirm">Save</button>
+          <button class="btn" id="api-save-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Postman Import Modal -->
+  <div class="api-modal-overlay" id="api-postman-modal" style="display:none">
+    <div class="api-modal" style="min-width:550px">
+      <div class="api-modal-header">
+        <h3>Import Postman Collection</h3>
+        <button class="api-modal-close" id="api-postman-modal-close">&times;</button>
+      </div>
+      <div style="padding:16px">
+        <p style="font-size:12px;color:var(--subtext0);margin-bottom:12px">
+          Paste the contents of a Postman Collection v2.1 export (JSON), or drag &amp; drop the file below.
+        </p>
+        <textarea id="api-postman-json" class="api-body-textarea" style="min-height:200px;max-height:400px" placeholder='{ "info": { "name": "My Collection", ... }, "item": [...] }'></textarea>
+        <div id="api-postman-drop-zone" style="border:2px dashed var(--surface1);border-radius:6px;padding:16px;text-align:center;color:var(--overlay0);font-size:12px;margin-top:8px;cursor:pointer;transition:border-color 0.15s">
+          Drop .json file here or click to browse
+          <input type="file" id="api-postman-file" accept=".json" style="display:none" multiple />
+        </div>
+        <div id="api-postman-error" style="color:var(--red);font-size:11px;margin-top:8px;display:none"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button class="btn api-btn-send" id="api-postman-import">Import</button>
+          <button class="btn" id="api-postman-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection/Folder Editor Modal -->
+  <div class="api-modal-overlay" id="api-coll-editor-modal" style="display:none">
+    <div class="api-modal api-coll-editor">
+      <div class="api-modal-header">
+        <h3 id="api-coll-editor-title">Edit Collection</h3>
+        <button class="api-modal-close" id="api-coll-editor-close">&times;</button>
+      </div>
+      <div class="api-coll-editor-tabs">
+        <button class="api-coll-editor-tab active" data-cedtab="auth">Auth</button>
+        <button class="api-coll-editor-tab" data-cedtab="variables">Variables</button>
+        <button class="api-coll-editor-tab" data-cedtab="pre-script">Pre-Script</button>
+        <button class="api-coll-editor-tab" data-cedtab="tests">Tests</button>
+      </div>
+      <div class="api-coll-editor-body">
+        <div class="api-coll-editor-pane" id="api-cedtab-auth"></div>
+        <div class="api-coll-editor-pane" id="api-cedtab-variables" style="display:none"></div>
+        <div class="api-coll-editor-pane" id="api-cedtab-pre-script" style="display:none"></div>
+        <div class="api-coll-editor-pane" id="api-cedtab-tests" style="display:none"></div>
+      </div>
+      <div class="api-coll-editor-footer">
+        <button class="btn api-btn-send" id="api-coll-editor-save">Save</button>
+        <button class="btn" id="api-coll-editor-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Git Changes Modal -->
+  <div class="api-modal-overlay" id="git-changes-modal" style="display:none">
+    <div class="api-modal git-changes-modal">
+      <div class="api-modal-header">
+        <h3 id="git-changes-title">Changes</h3>
+        <div class="api-modal-header-actions">
+          <button class="git-wordwrap-btn" id="git-wordwrap-btn" title="Toggle word wrap">Wrap</button>
+          <button class="api-modal-close" id="git-changes-close">&times;</button>
+        </div>
+      </div>
+      <div class="git-changes-body">
+        <!-- Branch warning -->
+        <div class="git-branch-warning" id="git-branch-warning" style="display:none"></div>
+        <!-- Commit bar -->
+        <div class="git-commit-bar">
+          <textarea class="git-commit-msg" id="git-commit-msg" placeholder="Commit message..." rows="2"></textarea>
+          <div class="git-commit-actions">
+            <label class="git-commit-check"><input type="checkbox" id="git-stage-all" checked> Stage all</label>
+            <button class="btn git-commit-btn" id="git-commit-btn">Commit</button>
+            <button class="btn git-commit-push-btn" id="git-commit-push-btn">Commit &amp; Push</button>
+          </div>
+          <div class="git-commit-error" id="git-commit-error" style="display:none"></div>
+        </div>
+        <!-- File list + diff split -->
+        <div class="git-changes-split">
+          <div class="git-changes-file-list" id="git-changes-file-list"></div>
+          <div class="git-changes-diff" id="git-changes-diff">
+            <div class="git-diff-placeholder">Select a file to view diff</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branch Picker Modal -->
+  <div class="api-modal-overlay" id="branch-picker-modal" style="display:none">
+    <div class="api-modal branch-picker-modal">
+      <div class="api-modal-header">
+        <h3 id="branch-picker-title">Switch Branch</h3>
+        <button class="api-modal-close" id="branch-picker-close">&times;</button>
+      </div>
+      <div class="branch-picker-body">
+        <input type="text" class="branch-picker-search" id="branch-picker-search" placeholder="Search branches…" autocomplete="off" spellcheck="false" />
+        <div class="branch-picker-list" id="branch-picker-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="api-context-menu" id="api-context-menu" style="display:none"></div>
+
+  <!-- Sentry Issue Detail Overlay -->
+  <div id="sentry-detail-overlay" class="sentry-detail-overlay" style="display:none" role="dialog" aria-label="Sentry Issue">
+    <div class="sentry-detail-panel">
+      <div class="sentry-detail-hdr">
+        <div id="sentry-detail-header" class="sentry-detail-header-content"></div>
+        <button class="sentry-detail-close-btn" id="sentry-detail-close" title="Close (Escape)">&times;</button>
+      </div>
+      <div class="sentry-detail-body" id="sentry-detail-body">
+        <div class="sentry-detail-placeholder">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Search Overlay -->
+  <div id="search-overlay" class="search-overlay" style="display:none" role="dialog" aria-label="Search">
+    <div class="search-panel">
+      <div class="search-header">
+        <div class="search-input-row">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="search-input" class="search-input-field" placeholder="Search across repos…" spellcheck="false" autocomplete="off" />
+          <button id="search-case-btn" class="search-opt-btn" title="Case sensitive (Alt+C)" data-active="false">Aa</button>
+          <button id="search-regex-btn" class="search-opt-btn" title="Use regular expression (Alt+R)" data-active="false">.*</button>
+          <button class="search-close-btn" id="search-close" title="Close (Escape)">&times;</button>
+        </div>
+        <div class="search-repo-row" id="search-repo-row">
+          <!-- repo checkboxes populated by search.js -->
+        </div>
+      </div>
+      <div class="search-status-bar" id="search-status-bar"></div>
+      <div class="search-results" id="search-results">
+        <div class="search-placeholder">Type to search across all repos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Creator Modal -->
+  <div class="api-modal-overlay" id="metric-creator-modal" style="display:none">
+    <div class="api-modal metric-creator-dlg">
+      <div class="api-modal-header">
+        <h3 id="metric-creator-title">Create Metric</h3>
+        <button class="api-modal-close" id="metric-creator-close">&times;</button>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="mwiz-steps">
+        <div class="mwiz-step active" data-step="1"><span class="mwiz-step-num">1</span> Define Query</div>
+        <div class="mwiz-step-sep">›</div>
+        <div class="mwiz-step" data-step="2"><span class="mwiz-step-num">2</span> Display</div>
+        <div class="mwiz-step-sep">›</div>
+        <div class="mwiz-step" data-step="3"><span class="mwiz-step-num">3</span> Save</div>
+      </div>
+
+      <!-- Step 1: Define Query -->
+      <div class="mwiz-pane active" id="mwiz-pane-1">
+        <div class="mwiz-row">
+          <label class="mwiz-label">SQL Source</label>
+          <div class="mwiz-source-tabs">
+            <button class="mwiz-src-tab active" data-src="script">📁 From Script</button>
+            <button class="mwiz-src-tab" data-src="inline">✏️ Write SQL</button>
+          </div>
+        </div>
+
+        <!-- Script tree panel -->
+        <div class="mwiz-script-panel" id="mwiz-script-panel">
+          <div class="mwiz-script-search-row">
+            <input type="text" id="mwiz-script-search" class="mwiz-input" placeholder="Filter scripts…" />
+          </div>
+          <div class="mwiz-script-tree" id="mwiz-script-tree"></div>
+          <div class="mwiz-selected-script" id="mwiz-selected-script" style="display:none">
+            <span class="mwiz-selected-label">Selected:</span>
+            <span id="mwiz-selected-path"></span>
+          </div>
+        </div>
+
+        <!-- Inline SQL panel -->
+        <div class="mwiz-inline-panel" id="mwiz-inline-panel" style="display:none">
+          <textarea id="mwiz-sql-editor" class="mwiz-sql-editor" placeholder="SELECT count(*) AS total FROM your_table WHERE ...&#10;&#10;Only SELECT queries are allowed." spellcheck="false"></textarea>
+        </div>
+
+        <div class="mwiz-row mwiz-conn-row">
+          <div class="mwiz-field">
+            <label class="mwiz-label">Connection</label>
+            <select id="mwiz-connection" class="mwiz-select"></select>
+          </div>
+          <div class="mwiz-field mwiz-field-sm">
+            <label class="mwiz-label">&nbsp;</label>
+            <button class="btn api-btn-send" id="mwiz-preview-btn">▶ Preview</button>
+          </div>
+        </div>
+
+        <div id="mwiz-preview-result" class="mwiz-preview-result" style="display:none"></div>
+        <div id="mwiz-step1-error" class="mwiz-error" style="display:none"></div>
+      </div>
+
+      <!-- Step 2: Display -->
+      <div class="mwiz-pane" id="mwiz-pane-2" style="display:none">
+        <div class="mwiz-preview-summary" id="mwiz-preview-summary"></div>
+
+        <label class="mwiz-label">Widget Type</label>
+        <div class="mwiz-type-grid" id="mwiz-type-grid">
+          <div class="mwiz-type-card" data-type="number-metric">
+            <span class="mwiz-type-icon">🔢</span>
+            <span class="mwiz-type-name">Number Metric</span>
+            <span class="mwiz-type-desc">Single scalar value</span>
+          </div>
+          <div class="mwiz-type-card" data-type="delta-metric">
+            <span class="mwiz-type-icon">📈</span>
+            <span class="mwiz-type-name">Delta Metric</span>
+            <span class="mwiz-type-desc">Value + trend vs last run</span>
+          </div>
+          <div class="mwiz-type-card" data-type="table-list">
+            <span class="mwiz-type-icon">📋</span>
+            <span class="mwiz-type-name">Table List</span>
+            <span class="mwiz-type-desc">Multi-row results</span>
+          </div>
+          <div class="mwiz-type-card" data-type="kv-card">
+            <span class="mwiz-type-icon">🗂️</span>
+            <span class="mwiz-type-name">Key / Value</span>
+            <span class="mwiz-type-desc">Single-row, column per field</span>
+          </div>
+          <div class="mwiz-type-card" data-type="bar-chart">
+            <span class="mwiz-type-icon">📊</span>
+            <span class="mwiz-type-name">Bar Chart</span>
+            <span class="mwiz-type-desc">Label + numeric column</span>
+          </div>
+          <div class="mwiz-type-card" data-type="status-badges">
+            <span class="mwiz-type-icon">🏷️</span>
+            <span class="mwiz-type-name">Status Badges</span>
+            <span class="mwiz-type-desc">Boolean / enum states</span>
+          </div>
+          <div class="mwiz-type-card" data-type="gauge">
+            <span class="mwiz-type-icon">🌡️</span>
+            <span class="mwiz-type-name">Gauge</span>
+            <span class="mwiz-type-desc">Value as % of max</span>
+          </div>
+        </div>
+
+        <div class="mwiz-type-config" id="mwiz-type-config" style="display:none">
+          <div class="mwiz-type-config-inner" id="mwiz-type-config-inner"></div>
+        </div>
+
+        <div id="mwiz-step2-error" class="mwiz-error" style="display:none"></div>
+      </div>
+
+      <!-- Step 3: Name & Save -->
+      <div class="mwiz-pane" id="mwiz-pane-3" style="display:none">
+        <div class="mwiz-field">
+          <label class="mwiz-label">Metric Name</label>
+          <input type="text" id="mwiz-name" class="mwiz-input" placeholder="e.g. Active Users, Queue Depth, Error Rate" />
+        </div>
+        <div class="mwiz-row">
+          <div class="mwiz-field">
+            <label class="mwiz-label">Refresh Interval</label>
+            <select id="mwiz-refresh" class="mwiz-select">
+              <option value="0">Manual only</option>
+              <option value="30">Every 30 seconds</option>
+              <option value="60" selected>Every minute</option>
+              <option value="300">Every 5 minutes</option>
+              <option value="900">Every 15 minutes</option>
+            </select>
+          </div>
+          <div class="mwiz-field mwiz-field-sm">
+            <label class="mwiz-label">Width (cols)</label>
+            <select id="mwiz-width" class="mwiz-select">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="6">6</option>
+              <option value="12">12</option>
+            </select>
+          </div>
+          <div class="mwiz-field mwiz-field-sm">
+            <label class="mwiz-label">Height (rows)</label>
+            <select id="mwiz-height" class="mwiz-select">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="6">6</option>
+              <option value="8">8</option>
+            </select>
+          </div>
+        </div>
+        <div id="mwiz-step3-error" class="mwiz-error" style="display:none"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="mwiz-footer">
+        <div class="mwiz-footer-left">
+          <button class="btn" id="mwiz-delete-btn" style="display:none;color:var(--red)">🗑 Delete</button>
+        </div>
+        <div class="mwiz-footer-right">
+          <button class="btn" id="mwiz-back-btn" style="display:none">← Back</button>
+          <button class="btn api-btn-send" id="mwiz-next-btn">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ansi_up@5/ansi_up.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/sql.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
+  <script src="/widgets/shared.js"></script>
+  <script src="/widgets/git-status.js"></script>
+  <script src="/widgets/external-services.js"></script>
+  <script src="/widgets/claude-usage.js"></script>
+  <script src="/widgets/ado.js"></script>
+  <script src="/widgets/sentry.js"></script>
+  <script src="/widgets/releases.js"></script>
+  <script src="/widgets/db-migrations.js"></script>
+  <script src="/widgets/env-diff.js"></script>
+  <script src="/widgets/test-runner.js"></script>
+  <script src="/widgets/cli-tools.js"></script>
+  <script src="/widgets/service-log.js"></script>
+  <script src="/widgets/github.js"></script>
+  <script src="/widgets/commit-history.js"></script>
+  <script src="/widgets/contributions.js"></script>
+  <script src="/widgets/claude-skills.js"></script>
+  <script src="/widgets/metric.js"></script>
+  <script src="/app.js"></script>
+  <script src="/docs.js"></script>
+  <script src="/swagger.js"></script>
+  <script src="/db.js"></script>
+  <script src="/settings.js"></script>
+  <script src="/repo.js"></script>
+  <script src="/search.js"></script>
+  <script src="/sentry-detail.js"></script>
+  <script src="/copilot.js"></script>
+
+  <!-- Quick Open Modal (F1 / Ctrl+P) -->
+  <div class="quick-open-overlay" id="quick-open-overlay" style="display:none"></div>
+  <div class="quick-open-modal" id="quick-open-modal" style="display:none">
+    <div class="quick-open-input-row">
+      <span class="quick-open-prefix" id="quick-open-prefix">&gt;</span>
+      <input id="quick-open-input" class="quick-open-input" spellcheck="false" autocomplete="off" />
+    </div>
+    <div class="quick-open-hint" id="quick-open-hint">type a command, or <kbd>Backspace</kbd> to search files</div>
+    <div class="quick-open-results" id="quick-open-results"></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "example-metric",
+    "name": "Example: Row Count",
+    "sql": "SELECT COUNT(*) AS total FROM your_table",
+    "connectionId": "local",
+    "refreshInterval": 300,
+    "widgetType": "number-metric",
+    "widgetConfig": {
+      "valueColumn": "total",
+      "label": "Total Rows",
+      "unit": ""
+    },
+    "defaultSize": { "w": 2, "h": 2 }
+  }
+]

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "my-api",
+    "name": "My API",
+    "baseUrl": "http://localhost:3000",
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearer-token}}"
+    },
+    "endpoints": [
+      {
+        "id": "health",
+        "name": "Health Check",
+        "method": "GET",
+        "path": "/health"
+      }
+    ]
+  }
+]

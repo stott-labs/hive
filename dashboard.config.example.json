@@ -1,0 +1,66 @@
+{
+  "name": "My Project",
+  "title": "My Project Dev Dashboard",
+  "basePaths": {
+    "windows": "C:\\Users\\YourName\\Projects",
+    "mac": "/Users/yourname/Projects"
+  },
+  "repos": [
+    "my-api",
+    "my-web",
+    "my-db"
+  ],
+  "services": {
+    "web": { "label": "Web (Vite)", "port": 8080, "startCmd": "npx vite --port 8080", "repoDir": "my-web" },
+    "api": { "label": "API (NestJS)", "port": 3000, "startCmd": "npm run start:dev", "repoDir": "my-api" }
+  },
+  "logDir": ".devdash/logs",
+  "externalMonitors": [
+    { "key": "prod", "label": "Production", "url": "https://myapp.com", "type": "http" },
+    { "key": "claude", "label": "Claude", "url": "https://status.claude.com/api/v2/status.json", "type": "statuspage" }
+  ],
+  "ado": {
+    "org": "my-ado-org",
+    "project": "My Project",
+    "team": "My Team",
+    "users": ["Developer Name"],
+    "prRepos": ["my-api", "my-web"],
+    "workItemTypes": ["Bug", "User Story", "Feature"],
+    "activeStates": ["Active", "New"]
+  },
+  "sentry": {
+    "org": "my-sentry-org",
+    "projects": ["frontend", "backend"]
+  },
+  "github": {
+    "org": "my-github-org",
+    "users": ["github-username"],
+    "prRepos": ["owner/repo1", "owner/repo2"],
+    "watchRepos": ["owner/repo1", "owner/repo2"]
+  },
+  "bookmarks": [
+    { "label": "Swagger UI", "url": "http://localhost:3000/swagger" },
+    { "label": "Project Board", "url": "https://dev.azure.com/my-org/my-project/_boards" }
+  ],
+  "quickActions": {
+    "run-api-tests": { "repoDir": "my-api", "cmd": "jest", "args": ["--passWithNoTests"] },
+    "run-db-seed": { "repoDir": "my-db", "cmd": "knex", "args": ["seed:run", "--env", "local"] }
+  },
+  "cliTools": [
+    { "id": "test-env", "name": "Test Env", "desc": "Test environment connectivity", "cmd": "src/commands/test-env.ts", "args": [], "category": "Utilities" }
+  ],
+  "releases": {
+    "repoDir": "my-web",
+    "path": "releases.json"
+  },
+  "envDiff": {
+    "local": { "repoDir": "my-api", "path": ".env" },
+    "dev": { "repoDir": "deployments", "path": "dev-settings.env" },
+    "prod": { "repoDir": "deployments", "path": "prod-settings.env" }
+  },
+  "docsDir": "docs",
+  "docsSkipDirs": [".git", "node_modules", ".obsidian", ".trash"],
+  "swaggerUrl": "http://localhost:3000/swagger-json",
+  "dbRepo": "my-db",
+  "cliRepo": "my-cli"
+}

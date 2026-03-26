@@ -248,7 +248,7 @@ $ConfigContent = @"
   }
 }
 "@
-Set-Content -Path $ConfigFile -Value $ConfigContent -Encoding UTF8
+[System.IO.File]::WriteAllText($ConfigFile, $ConfigContent, [System.Text.Encoding]::new(65001, $false, $false))
 Write-Success "Created dashboard.config.json"
 
 # --- data/databases.json ---
@@ -259,7 +259,7 @@ if ($DbEntries.Count -gt 0) {
     $DbJson = $DbEntries | ConvertTo-Json -Depth 5
     # Ensure it's always an array
     if ($DbEntries.Count -eq 1) { $DbJson = "[$DbJson]" }
-    Set-Content -Path $DatabasesFile -Value $DbJson -Encoding UTF8
+    [System.IO.File]::WriteAllText($DatabasesFile, $DbJson, [System.Text.Encoding]::new(65001, $false, $false))
     Write-Success "Created data/databases.json ($($DbEntries.Count) connection(s))"
 } else {
     Set-Content -Path $DatabasesFile -Value '[]' -Encoding UTF8
@@ -274,7 +274,7 @@ if (-not [string]::IsNullOrWhiteSpace($WebRepoDir)) {
 Set-Location $(ConvertTo-JsonString "$ProjectsDir\$WebRepoDir")
 $WebStartCmd
 "@
-    Set-Content -Path $WebScriptPath -Value $WebScriptContent -Encoding UTF8
+    [System.IO.File]::WriteAllText($WebScriptPath, $WebScriptContent, [System.Text.Encoding]::new(65001, $false, $false))
     Write-Success "Created run-web.ps1"
 }
 
@@ -286,7 +286,7 @@ if (-not [string]::IsNullOrWhiteSpace($ApiRepoDir)) {
 Set-Location $(ConvertTo-JsonString "$ProjectsDir\$ApiRepoDir")
 $ApiStartCmd
 "@
-    Set-Content -Path $ApiScriptPath -Value $ApiScriptContent -Encoding UTF8
+    [System.IO.File]::WriteAllText($ApiScriptPath, $ApiScriptContent, [System.Text.Encoding]::new(65001, $false, $false))
     Write-Success "Created run-api.ps1"
 }
 
@@ -305,7 +305,7 @@ $PathsContent = "HIVE_DIR=$ScriptDir"
 if (-not [string]::IsNullOrWhiteSpace($HivemindDir)) {
     $PathsContent += "`nHIVEMIND_DIR=$HivemindDir"
 }
-Set-Content -Path $HivemindPathsFile -Value $PathsContent -Encoding UTF8
+[System.IO.File]::WriteAllText($HivemindPathsFile, $PathsContent, [System.Text.Encoding]::new(65001, $false, $false))
 Write-Success "Written $HivemindPathsFile"
 
 # ---------------------------------------------------------------------------

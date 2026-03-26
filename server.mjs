@@ -24,7 +24,7 @@ if (!existsSync(CONFIG_PATH)) {
   console.error('ERROR: dashboard.config.json not found. Copy dashboard.config.example.json and customize it.');
   process.exit(1);
 }
-let CONFIG = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
+let CONFIG = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8').replace(/^\uFEFF/, ''));
 
 // Load .env from repo root
 dotenv.config({ path: join(__dirname, '.env') });

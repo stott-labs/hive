@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # =============================================================================
 # H.I.V.E. Setup — Hub for Integrated Visualization & Exploration
 # Interactive CLI to generate dashboard.config.json and data files.
@@ -23,8 +23,8 @@ RED='\033[0;31m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-header()  { echo -e "\n${CYAN}${BOLD}$1${RESET}"; echo -e "${CYAN}$(printf '─%.0s' {1..60})${RESET}"; }
-success() { echo -e "${GREEN}✔  $1${RESET}"; }
+header()  { echo -e "\n${CYAN}${BOLD}$1${RESET}"; echo -e "${CYAN}$(printf '-%.0s' {1..60})${RESET}"; }
+success() { echo -e "${GREEN}+  $1${RESET}"; }
 info()    { echo -e "${CYAN}ℹ  $1${RESET}"; }
 warn()    { echo -e "${YELLOW}⚠  $1${RESET}"; }
 prompt()  { echo -e "${BOLD}$1${RESET}"; }

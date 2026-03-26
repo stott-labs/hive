@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # H.I.V.E. Setup — Hub for Integrated Visualization & Exploration
 # Interactive CLI to generate dashboard.config.json and data files.
 # Re-run at any time to update your configuration.
@@ -22,7 +22,7 @@ function Write-Header($text) {
     Write-Host ""
     Write-Host $text -ForegroundColor Cyan -NoNewline
     Write-Host ""
-    Write-Host ("─" * 60) -ForegroundColor Cyan
+    Write-Host ("-" * 60) -ForegroundColor Cyan
 }
 
 function Write-Success($text) { Write-Host "✔  $text" -ForegroundColor Green }

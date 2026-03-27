@@ -7,9 +7,10 @@ WIDGET_REGISTRY['contributions'] = {
   minW: 3, minH: 3,
 
   init(contentEl) {
-    this._author  = localStorage.getItem('contributions-author') || 'all';
-    this._sources = new Set(JSON.parse(localStorage.getItem('contributions-sources') || '["github","ado"]'));
-    this._data    = { github: {}, ado: {} };
+    this._author       = localStorage.getItem('contributions-author') || 'all';
+    this._sources      = new Set(JSON.parse(localStorage.getItem('contributions-sources') || '["github","ado"]'));
+    this._hideWeekends = !!localStorage.getItem('contributions-hide-weekends');
+    this._data         = { github: {}, ado: {} };
     contentEl.innerHTML = `
       <div class="ch-filter-bar" id="contrib-filter-bar"></div>
       <div class="panel-body" id="contrib-body">${skeletonRows(3, 'list')}</div>`;
@@ -58,6 +59,8 @@ WIDGET_REGISTRY['contributions'] = {
     for (const u of users) {
       html += `<button class="ado-filter-chip${this._author === u ? ' active' : ''}" data-author="${esc(u)}">${esc(u.split(' ')[0])}</button>`;
     }
+    html += `<span class="contrib-filter-sep"></span>`;
+    html += `<button class="ado-filter-chip${this._hideWeekends ? ' active' : ''}" data-toggle="weekends">Hide weekends</button>`;
     bar.innerHTML = html;
 
     bar.querySelectorAll('.contrib-src-chip').forEach(btn => {
@@ -79,6 +82,12 @@ WIDGET_REGISTRY['contributions'] = {
         localStorage.setItem('contributions-author', this._author);
         this._load(contentEl);
       });
+    });
+    bar.querySelector('[data-toggle="weekends"]')?.addEventListener('click', () => {
+      this._hideWeekends = !this._hideWeekends;
+      localStorage.setItem('contributions-hide-weekends', this._hideWeekends ? '1' : '');
+      this._renderFilterBar(contentEl);
+      this._render(contentEl);
     });
   },
 
@@ -151,18 +160,21 @@ WIDGET_REGISTRY['contributions'] = {
       `<span class="contrib-legend-dot" style="background:${SRC_COLORS[s]}"></span><span class="contrib-legend-label">${s === 'github' ? 'GitHub' : s.toUpperCase()}</span>`
     ).join('');
 
-    // Hex grid geometry — flat-top hexagons with staggered columns
+    // Hex grid geometry — flat-top hexagons, rectangular grid (no stagger)
     const HR       = 7;                    // radius (center to vertex)
     const HH       = HR * Math.sqrt(3);    // flat-to-flat height ≈ 12.12
-    const GAP      = 2;                    // gap between adjacent hexes
+    const GAP      = 4;                    // gap between adjacent hexes
     const COL_STEP = HR * 1.5 + GAP;      // x spacing between column centers
-    const ROW_STEP = HH + GAP;            // y spacing between rows within a column
-    const STAGGER  = ROW_STEP / 2;        // y shift for odd-indexed columns
-    const GX       = 16;                   // left offset (room for day labels)
+    const ROW_STEP = HH + GAP;            // y spacing between rows
+    const GX       = 20;                   // left offset (room for day labels incl. "Th")
     const GY       = 18;                   // top offset (room for month labels)
 
-    function colX(col)      { return GX + HR + col * COL_STEP; }
-    function rowY(row, col) { return GY + (col % 2 === 1 ? STAGGER : 0) + row * ROW_STEP; }
+    const DAY_LABELS  = ['M','T','W','Th','F','Sa','Su'];
+    const visibleRows = this._hideWeekends ? [0,1,2,3,4] : [0,1,2,3,4,5,6];
+    const numRows     = visibleRows.length;
+
+    function colX(col)    { return GX + HR + col * COL_STEP; }
+    function rowY(visRow) { return GY + visRow * ROW_STEP; }
     function hexPts(cx, cy) {
       let s = '';
       for (let i = 0; i < 6; i++) {
@@ -173,21 +185,24 @@ WIDGET_REGISTRY['contributions'] = {
     }
 
     const svgW = Math.ceil(GX + HR + (totalWeeks - 1) * COL_STEP + HR + 4);
-    const svgH = Math.ceil(GY + STAGGER + 6 * ROW_STEP + HH / 2 + 4);
+    const svgH = Math.ceil(GY + (numRows - 1) * ROW_STEP + HH / 2 + 4);
 
     const monthSvg = monthMarks.map(({ weekIdx: wi, label }) =>
       `<text x="${colX(wi).toFixed(1)}" y="11" class="contrib-svg-label">${esc(label)}</text>`
     ).join('');
 
-    const daySvg = ['M','','W','','F','',''].map((d, row) =>
-      d ? `<text x="${GX - 2}" y="${(rowY(row, 0) + 3).toFixed(1)}" class="contrib-svg-label" text-anchor="end">${d}</text>` : ''
+    const daySvg = visibleRows.map((row, visRow) =>
+      `<text x="${GX - 3}" y="${(rowY(visRow) + 3).toFixed(1)}" class="contrib-svg-label" text-anchor="end">${DAY_LABELS[row]}</text>`
     ).join('');
 
-    const hexSvg = cells.map(({ tip, level }, idx) => {
-      const col = Math.floor(idx / 7);
-      const row = idx % 7;
-      return `<polygon points="${hexPts(colX(col), rowY(row, col))}" class="hex-cell hex-l${level}"><title>${tip}</title></polygon>`;
-    }).join('');
+    const hexSvg = cells.reduce((parts, { tip, level }, idx) => {
+      const col    = Math.floor(idx / 7);
+      const row    = idx % 7;
+      const visRow = visibleRows.indexOf(row);
+      if (visRow === -1) return parts;
+      parts.push(`<polygon points="${hexPts(colX(col), rowY(visRow))}" class="hex-cell hex-l${level}"><title>${tip}</title></polygon>`);
+      return parts;
+    }, []).join('');
 
     body.innerHTML = `
       <div class="contrib-stats">

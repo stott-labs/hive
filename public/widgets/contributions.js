@@ -127,7 +127,9 @@ WIDGET_REGISTRY['contributions'] = {
       const parts = [];
       if (entry.github) parts.push(`GH:${entry.github}`);
       if (entry.ado)    parts.push(`ADO:${entry.ado}`);
-      const tip = `${ds}: ${count} (${parts.join(', ') || 'none'})`;
+      const dateLabel  = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const countLabel = count ? `${count}${parts.length ? ` (${parts.join(', ')})` : ''}` : 'no activity';
+      const tip = `${dateLabel} · ${countLabel}`;
       cells.push({ ds, count, level, tip });
 
       if (d.getMonth() !== lastMonth) {

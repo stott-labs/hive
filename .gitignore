@@ -7,11 +7,14 @@ data/metrics.json
 data/db-scripts/
 run-web.sh
 run-api.sh
+run-web.ps1
+run-api.ps1
 
 # Runtime
 dashboard.log
 *.log
 .env
+data/history.json
 
 # Dependencies
 node_modules/

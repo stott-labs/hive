@@ -1,20 +1,18 @@
 {
   "name": "My Project",
-  "title": "My Project Dev Dashboard",
-  "basePaths": {
-    "windows": "C:\\Users\\YourName\\Projects",
-    "mac": "/Users/yourname/Projects"
-  },
+  "title": "My Project — H.I.V.E.",
+  "projectsDir": "C:\\Users\\YourName\\Projects",
   "repos": [
+    "hive",
     "my-api",
     "my-web",
     "my-db"
   ],
   "services": {
-    "web": { "label": "Web (Vite)", "port": 8080, "startCmd": "npx vite --port 8080", "repoDir": "my-web" },
-    "api": { "label": "API (NestJS)", "port": 3000, "startCmd": "npm run start:dev", "repoDir": "my-api" }
+    "web": { "label": "Web", "port": 8080, "startCmd": "npm run dev", "repoDir": "my-web" },
+    "api": { "label": "API", "port": 3000, "startCmd": "npm run start:dev", "repoDir": "my-api" }
   },
-  "logDir": ".devdash/logs",
+  "logDir": ".hive/logs",
   "externalMonitors": [
     { "key": "prod", "label": "Production", "url": "https://myapp.com", "type": "http" },
     { "key": "claude", "label": "Claude", "url": "https://status.claude.com/api/v2/status.json", "type": "statuspage" }
@@ -46,17 +44,14 @@
     "run-api-tests": { "repoDir": "my-api", "cmd": "jest", "args": ["--passWithNoTests"] },
     "run-db-seed": { "repoDir": "my-db", "cmd": "knex", "args": ["seed:run", "--env", "local"] }
   },
-  "cliTools": [
-    { "id": "test-env", "name": "Test Env", "desc": "Test environment connectivity", "cmd": "src/commands/test-env.ts", "args": [], "category": "Utilities" }
-  ],
   "releases": {
     "repoDir": "my-web",
     "path": "releases.json"
   },
   "envDiff": {
     "local": { "repoDir": "my-api", "path": ".env" },
-    "dev": { "repoDir": "deployments", "path": "dev-settings.env" },
-    "prod": { "repoDir": "deployments", "path": "prod-settings.env" }
+    "dev":   { "repoDir": "deployments", "path": "dev-settings.env" },
+    "prod":  { "repoDir": "deployments", "path": "prod-settings.env" }
   },
   "docsDir": "docs",
   "docsSkipDirs": [".git", "node_modules", ".obsidian", ".trash"],

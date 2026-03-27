@@ -102,6 +102,7 @@ if (!existsSync(LOG_DIR)) mkdirSync(LOG_DIR, { recursive: true });
 
 const LOG_DEFS = {};
 for (const [key, svc] of Object.entries(CONFIG.services || {})) {
+  if (!svc) continue;
   LOG_DEFS[key] = {
     label: `${svc.label} :${svc.port}`,
     file: join(LOG_DIR, `${key}.log`),
@@ -520,7 +521,7 @@ app.get('/api/config', (_req, res) => {
     githubConfigured: isGithubConfigured(),
     githubUsers: CONFIG.github?.users || [],
     services: Object.fromEntries(
-      Object.entries(CONFIG.services || {}).map(([k, v]) => [k, { label: v.label, port: v.port }])
+      Object.entries(CONFIG.services || {}).filter(([, v]) => v != null).map(([k, v]) => [k, { label: v.label, port: v.port }])
     ),
     cliTools: CONFIG.cliTools || [],
     repos: REPOS,

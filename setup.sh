@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # =============================================================================
 # H.I.V.E. Setup — Hub for Integrated Visualization & Exploration
 # Interactive CLI to generate dashboard.config.json and data files.
@@ -23,7 +23,7 @@ RED='\033[0;31m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-header()  { echo -e "\n${CYAN}${BOLD}$1${RESET}"; echo -e "${CYAN}$(printf '-%.0s' {1..60})${RESET}"; }
+header()  { echo -e "\n${CYAN}${BOLD}$1${RESET}"; echo -e "${CYAN}$(printf -- '-%.0s' {1..60})${RESET}"; }
 success() { echo -e "${GREEN}+  $1${RESET}"; }
 info()    { echo -e "${CYAN}ℹ  $1${RESET}"; }
 warn()    { echo -e "${YELLOW}⚠  $1${RESET}"; }
@@ -100,10 +100,11 @@ header "[2/8] Projects Base Directory"
 info "This is the parent folder where all your repos are cloned."
 info "Example: /Users/you/Projects or /c/Users/you/Projects"
 
-ask "Projects base directory" ""
+DEFAULT_PROJECTS_DIR="$(dirname "$SCRIPT_DIR")"
+ask "Projects base directory" "$DEFAULT_PROJECTS_DIR"
 while [[ -z "$REPLY" ]]; do
   warn "Base directory is required."
-  ask "Projects base directory" ""
+  ask "Projects base directory" "$DEFAULT_PROJECTS_DIR"
 done
 PROJECTS_DIR="$REPLY"
 
@@ -337,7 +338,7 @@ echo -e "${GREEN}${BOLD}  H.I.V.E. setup complete!${RESET}"
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 echo -e "  ${BOLD}Start the dashboard:${RESET}"
-echo -e "  ${CYAN}  node server.mjs${RESET}"
+echo -e "  ${CYAN}  npm start${RESET}"
 echo ""
 echo -e "  ${BOLD}Then open:${RESET}  ${CYAN}http://localhost:3333${RESET}"
 echo ""

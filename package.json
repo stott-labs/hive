@@ -6,6 +6,7 @@
   "description": "H.I.V.E. — Hub for Integrated Visualization & Exploration. A developer dashboard for monitoring repos, services, logs, and custom SQL metrics.",
   "scripts": {
     "start": "node server.mjs",
+    "serve": "node server.mjs",
     "setup": "node setup.mjs"
   },
   "dependencies": {

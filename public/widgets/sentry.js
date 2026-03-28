@@ -40,8 +40,9 @@ WIDGET_REGISTRY['sentry'] = {
       }
 
       const sentryProjects = (window.DASH_CONFIG || {}).sentryProjects || [];
-      if (!this._projectFilter) {
+      if (!this._projectFilter || (sentryProjects.length > 0 && !sentryProjects.includes(this._projectFilter))) {
         this._projectFilter = sentryProjects[0] || '';
+        localStorage.setItem('sentry-project-filter', this._projectFilter);
       }
 
       if (filterBar) {

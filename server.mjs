@@ -1716,6 +1716,7 @@ app.get('/api/migrations/status', (req, res) => {
 // ---------------------------------------------------------------------------
 const ADO_ORG = CONFIG.ado?.org || '';
 const ADO_PROJECT = CONFIG.ado?.project || '';
+const ADO_BASE_URL = CONFIG.adoBaseUrl || 'https://dev.azure.com';
 const ADO_TEAM = CONFIG.ado?.team || '';
 
 function getAdoPat() {
@@ -1754,7 +1755,7 @@ app.get('/api/ado/sprint', async (_req, res) => {
   if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
   try {
     const teamId = ADO_TEAM;
-    const url = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/${encodeURIComponent(teamId)}/_apis/work/teamsettings/iterations?$timeframe=current&api-version=7.1`;
+    const url = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/${encodeURIComponent(teamId)}/_apis/work/teamsettings/iterations?$timeframe=current&api-version=7.1`;
     const data = await adoFetch(url);
     const iteration = data.value?.[0];
     if (!iteration) return res.json({ name: 'No active sprint', startDate: null, endDate: null });
@@ -1794,7 +1795,7 @@ app.get('/api/ado/work-items', async (req, res) => {
         ORDER BY [System.WorkItemType], [System.State], [System.CreatedDate] DESC`
     };
 
-    const wiqlUrl = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/wiql?api-version=7.1`;
+    const wiqlUrl = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/wiql?api-version=7.1`;
     const wiqlRes = await fetch(wiqlUrl, {
       method: 'POST',
       headers: adoHeaders(),
@@ -1808,7 +1809,7 @@ app.get('/api/ado/work-items', async (req, res) => {
     if (ids.length === 0) return res.json([]);
 
     // Batch fetch in chunks of 200 (ADO limit)
-    const batchUrl = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitems?ids=${ids.join(',')}&fields=System.Id,System.Title,System.State,System.WorkItemType,System.AssignedTo&api-version=7.1`;
+    const batchUrl = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitems?ids=${ids.join(',')}&fields=System.Id,System.Title,System.State,System.WorkItemType,System.AssignedTo&api-version=7.1`;
     const batchData = await adoFetch(batchUrl);
 
     const items = (batchData.value || []).map(wi => ({
@@ -1832,7 +1833,7 @@ app.patch('/api/ado/work-items/:id', async (req, res) => {
     const { state } = req.body;
     if (!state) return res.status(400).json({ error: 'state is required' });
 
-    const url = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitems/${id}?api-version=7.1`;
+    const url = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitems/${id}?api-version=7.1`;
     const patchBody = [{ op: 'replace', path: '/fields/System.State', value: state }];
     const patchRes = await fetch(url, {
       method: 'PATCH',
@@ -1870,7 +1871,7 @@ app.get('/api/ado/team-members', async (_req, res) => {
     // then batch-fetch AssignedTo to collect all unique assignees
     const pat = getAdoPat();
     const authHeader = `Basic ${Buffer.from(':' + pat).toString('base64')}`;
-    const wiqlUrl = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/wiql?$top=2000&api-version=7.1`;
+    const wiqlUrl = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/wiql?$top=2000&api-version=7.1`;
     const wiqlRes = await fetch(wiqlUrl, {
       method: 'POST',
       headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
@@ -1882,7 +1883,7 @@ app.get('/api/ado/team-members', async (_req, res) => {
     const allIds = (wiqlData.workItems || []).map(w => w.id);
     if (!allIds.length) return res.json([]);
     // Batch-fetch in chunks of 200 to get AssignedTo display names
-    const batchUrl = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemsbatch?api-version=7.1`;
+    const batchUrl = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemsbatch?api-version=7.1`;
     const names = new Set();
     for (let i = 0; i < allIds.length; i += 200) {
       const ids = allIds.slice(i, i + 200);
@@ -1909,7 +1910,7 @@ app.get('/api/ado/team-members', async (_req, res) => {
 app.get('/api/ado/project-repos', async (_req, res) => {
   if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
   try {
-    const url = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories?api-version=7.1`;
+    const url = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories?api-version=7.1`;
     const data = await adoFetch(url);
     const repos = (data.value || []).map(r => r.name).sort();
     res.json(repos);
@@ -1921,7 +1922,7 @@ app.get('/api/ado/project-repos', async (_req, res) => {
 app.get('/api/ado/work-item-types', async (_req, res) => {
   if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
   try {
-    const url = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemtypes?api-version=7.1`;
+    const url = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemtypes?api-version=7.1`;
     const data = await adoFetch(url);
     const types = (data.value || []).map(t => t.name).sort();
     res.json(types);
@@ -1933,12 +1934,12 @@ app.get('/api/ado/work-item-types', async (_req, res) => {
 app.get('/api/ado/work-item-states', async (_req, res) => {
   if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
   try {
-    const typesUrl = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemtypes?api-version=7.1`;
+    const typesUrl = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemtypes?api-version=7.1`;
     const typesData = await adoFetch(typesUrl);
     const typeNames = (typesData.value || []).map(t => t.name);
     const stateArrays = await Promise.all(typeNames.map(async (type) => {
       try {
-        const url = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemtypes/${encodeURIComponent(type)}/states?api-version=7.1`;
+        const url = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/wit/workitemtypes/${encodeURIComponent(type)}/states?api-version=7.1`;
         const data = await adoFetch(url);
         return (data.value || []).map(s => s.name);
       } catch { return []; }
@@ -1958,7 +1959,7 @@ app.get('/api/ado/prs', async (_req, res) => {
 
     for (const repo of repos) {
       try {
-        const url = `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories/${repo}/pullrequests?searchCriteria.status=active&api-version=7.1`;
+        const url = `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories/${repo}/pullrequests?searchCriteria.status=active&api-version=7.1`;
         const data = await adoFetch(url);
         for (const pr of (data.value || [])) {
           allPrs.push({
@@ -1968,7 +1969,7 @@ app.get('/api/ado/prs', async (_req, res) => {
             createdBy: pr.createdBy?.displayName || '',
             sourceBranch: pr.sourceRefName?.replace('refs/heads/', ''),
             targetBranch: pr.targetRefName?.replace('refs/heads/', ''),
-            url: `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_git/${repo}/pullrequest/${pr.pullRequestId}`,
+            url: `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_git/${repo}/pullrequest/${pr.pullRequestId}`,
           });
         }
       } catch {
@@ -2316,7 +2317,7 @@ app.get('/api/ado/contributions', async (req, res) => {
     let repoNames = CONFIG.ado?.prRepos || [];
     if (!repoNames.length) {
       const r = await fetch(
-        `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories?api-version=7.1`,
+        `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories?api-version=7.1`,
         { headers: { Authorization: authHeader }, signal: AbortSignal.timeout(10000) }
       );
       if (r.ok) repoNames = ((await r.json()).value || []).map(r => r.name);
@@ -2328,7 +2329,7 @@ app.get('/api/ado/contributions', async (req, res) => {
       if (author) params.set('searchCriteria.author', author);
       try {
         const r = await fetch(
-          `https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories/${encodeURIComponent(repoName)}/commits?${params}`,
+          `${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories/${encodeURIComponent(repoName)}/commits?${params}`,
           { headers: { Authorization: authHeader }, signal: AbortSignal.timeout(10000) }
         );
         if (!r.ok) return;
@@ -2368,7 +2369,7 @@ app.get('/api/repos/discover', async (_req, res) => {
     // ADO repos
     if (isAdoConfigured()) {
       try {
-        const data = await adoFetch(`https://dev.azure.com/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories?api-version=7.1`);
+        const data = await adoFetch(`${ADO_BASE_URL}/${ADO_ORG}/${encodeURIComponent(ADO_PROJECT)}/_apis/git/repositories?api-version=7.1`);
         for (const r of (data.value || [])) {
           const localPath = findLocalPath(r.name);
           results.push({
@@ -2560,6 +2561,7 @@ app.get('/api/github/org-repos', async (_req, res) => {
 // Sentry Integration
 // ---------------------------------------------------------------------------
 const SENTRY_ORG = CONFIG.sentry?.org || '';
+const SENTRY_BASE_URL = CONFIG.sentryBaseUrl || 'https://sentry.io';
 
 function getSentryToken() {
   return process.env.SENTRY_AUTH_TOKEN || '';
@@ -2592,7 +2594,7 @@ app.get('/api/sentry/issues', async (req, res) => {
       return res.status(400).json({ error: `Invalid project. Use one of: ${sentryProjects.join(', ')}` });
     }
 
-    const url = `https://sentry.io/api/0/projects/${SENTRY_ORG}/${project}/issues/?query=is:unresolved&sort=date&limit=25`;
+    const url = `${SENTRY_BASE_URL}/api/0/projects/${SENTRY_ORG}/${project}/issues/?query=is:unresolved&sort=date&limit=25`;
     const data = await sentryFetch(url);
 
     const issues = (Array.isArray(data) ? data : []).map(issue => ({
@@ -2745,8 +2747,8 @@ app.get('/api/sentry/issue/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const [issue, event] = await Promise.all([
-      sentryFetch(`https://sentry.io/api/0/issues/${id}/`),
-      sentryFetch(`https://sentry.io/api/0/issues/${id}/events/latest/?full=true`),
+      sentryFetch(`${SENTRY_BASE_URL}/api/0/issues/${id}/`),
+      sentryFetch(`${SENTRY_BASE_URL}/api/0/issues/${id}/events/latest/?full=true`),
     ]);
 
     const project = issue.project?.slug || '';

@@ -25,13 +25,16 @@ WIDGET_REGISTRY['contributions'] = {
       const params = new URLSearchParams({ days: 180 });
       if (this._author !== 'all') params.set('author', this._author);
 
+      // GitHub contribution calendar is per-authenticated-user only — skip when
+      // an ADO author filter is active since we can't map ADO names to GH logins.
+      const skipGh = this._author !== 'all';
       const [ghRes, adoRes] = await Promise.all([
-        fetch(`/api/github/contributions?${params}`),
+        skipGh ? null : fetch(`/api/github/contributions?${params}`),
         fetch(`/api/ado/contributions?${params}`),
       ]);
 
-      this._data.github = ghRes.ok  ? await ghRes.json()  : {};
-      this._data.ado    = adoRes.ok ? await adoRes.json() : {};
+      this._data.github = (ghRes?.ok) ? await ghRes.json() : {};
+      this._data.ado    = adoRes.ok   ? await adoRes.json() : {};
 
       this._renderFilterBar(contentEl);
       this._render(contentEl);

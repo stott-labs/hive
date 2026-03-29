@@ -5934,6 +5934,11 @@ details.settings-section[open] > .settings-section-header::before {
   border-color: var(--blue);
   box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.15);
 }
+.settings-input::placeholder {
+  color: var(--overlay0);
+  font-style: italic;
+  opacity: 0.6;
+}
 
 .settings-help {
   font-size: 10px;

@@ -541,9 +541,9 @@ app.get('/api/config', (_req, res) => {
     cliTools: CONFIG.cliTools || [],
     repos: REPOS,
     externalMonitors: CONFIG.externalMonitors || [],
-    dataDir: DATA_DIR,
-    privateDataDir: PRIVATE_DATA_DIR,
-    docsDir: DOCS_DIR,
+    dataDir: getDataDir(),
+    privateDataDir: getPrivateDataDir(),
+    docsDir: getDocsDir(),
   });
 });
 
@@ -736,15 +736,15 @@ function resolveDataDir(configured, fallback) {
   return fallback;
 }
 
-const DATA_DIR = resolveDataDir(CONFIG.dataDir, join(__dirname, 'data'));
-const PRIVATE_DATA_DIR = resolveDataDir(CONFIG.privateDataDir, join(homedir(), '.config', 'hive', 'data'));
+function getDataDir() { return resolveDataDir(CONFIG.dataDir, join(__dirname, 'data')); }
+function getPrivateDataDir() { return resolveDataDir(CONFIG.privateDataDir, join(homedir(), '.config', 'hive', 'data')); }
 const SEED_DIR = join(__dirname, 'data'); // seed files always from hive install
 
 function ensureDir(dir) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
-function readJsonFile(filename, defaultValue, dir = DATA_DIR) {
+function readJsonFile(filename, defaultValue, dir = getDataDir()) {
   ensureDir(dir);
   const filepath = join(dir, filename);
   if (!existsSync(filepath)) {
@@ -758,7 +758,7 @@ function readJsonFile(filename, defaultValue, dir = DATA_DIR) {
   }
 }
 
-function writeJsonFile(filename, data, dir = DATA_DIR) {
+function writeJsonFile(filename, data, dir = getDataDir()) {
   ensureDir(dir);
   writeFileSync(join(dir, filename), JSON.stringify(data, null, 2), 'utf-8');
 }
@@ -3007,7 +3007,7 @@ app.put('/api/user-prefs', (req, res) => {
 // ---------------------------------------------------------------------------
 // Phase 8: Docs browser endpoints
 // ---------------------------------------------------------------------------
-const DOCS_DIR = join(BASE_DIR, CONFIG.docsDir || 'docs');
+function getDocsDir() { return resolveDataDir(CONFIG.docsDir, join(BASE_DIR, 'docs')); }
 const DOCS_SKIP = new Set(CONFIG.docsSkipDirs || ['.git', 'node_modules', '.obsidian', '.trash']);
 let docsTreeCache = null;
 let docsTreeCacheTime = 0;
@@ -3036,7 +3036,7 @@ function scanDocsTree(dir, depth = 0) {
     if (item.name.startsWith('.')) continue;
 
     const fullPath = join(dir, item.name);
-    const relPath = relative(DOCS_DIR, fullPath).replace(/\\/g, '/');
+    const relPath = relative(getDocsDir(), fullPath).replace(/\\/g, '/');
 
     if (item.isDirectory()) {
       const children = scanDocsTree(fullPath, depth + 1);
@@ -3050,7 +3050,7 @@ function scanDocsTree(dir, depth = 0) {
 }
 
 app.get('/api/docs/tree', (_req, res) => {
-  if (!existsSync(DOCS_DIR)) {
+  if (!existsSync(getDocsDir())) {
     return res.json([]);
   }
 
@@ -3059,7 +3059,7 @@ app.get('/api/docs/tree', (_req, res) => {
     return res.json(docsTreeCache);
   }
 
-  docsTreeCache = scanDocsTree(DOCS_DIR);
+  docsTreeCache = scanDocsTree(getDocsDir());
   docsTreeCacheTime = now;
   res.json(docsTreeCache);
 });
@@ -3069,8 +3069,8 @@ app.get('/api/docs/file', (req, res) => {
   if (!filePath) return res.status(400).json({ error: 'path required' });
 
   // Path traversal protection
-  const resolved = normalize(join(DOCS_DIR, filePath));
-  if (!resolved.startsWith(DOCS_DIR + sep) && resolved !== DOCS_DIR) {
+  const resolved = normalize(join(getDocsDir(), filePath));
+  if (!resolved.startsWith(getDocsDir() + sep) && resolved !== getDocsDir()) {
     return res.status(403).json({ error: 'access denied' });
   }
 
@@ -3112,8 +3112,8 @@ app.get('/api/docs/asset', (req, res) => {
   const filePath = req.query.path;
   if (!filePath) return res.status(400).json({ error: 'path required' });
 
-  const resolved = normalize(join(DOCS_DIR, filePath));
-  if (!resolved.startsWith(DOCS_DIR + sep) && resolved !== DOCS_DIR) {
+  const resolved = normalize(join(getDocsDir(), filePath));
+  if (!resolved.startsWith(getDocsDir() + sep) && resolved !== getDocsDir()) {
     return res.status(403).json({ error: 'access denied' });
   }
 
@@ -3125,12 +3125,12 @@ app.get('/api/docs/asset', (req, res) => {
   const fileName = filePath.split('/').pop();
   const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
   const searchPaths = [
-    join(DOCS_DIR, dirPath, 'assets', fileName),   // assets/ subfolder
-    join(DOCS_DIR, 'assets', fileName),              // vault root assets/
+    join(getDocsDir(), dirPath, 'assets', fileName),   // assets/ subfolder
+    join(getDocsDir(), 'assets', fileName),              // vault root assets/
   ];
   for (const candidate of searchPaths) {
     const norm = normalize(candidate);
-    if (norm.startsWith(DOCS_DIR) && existsSync(norm)) {
+    if (norm.startsWith(getDocsDir()) && existsSync(norm)) {
       return res.sendFile(norm);
     }
   }
@@ -3141,7 +3141,7 @@ app.get('/api/docs/asset', (req, res) => {
 app.get('/api/docs/search', (req, res) => {
   const query = (req.query.q || '').toLowerCase().trim();
   if (!query || query.length < 2) return res.json([]);
-  if (!existsSync(DOCS_DIR)) return res.json([]);
+  if (!existsSync(getDocsDir())) return res.json([]);
 
   const results = [];
   const MAX_RESULTS = 50;
@@ -3164,7 +3164,7 @@ app.get('/api/docs/search', (req, res) => {
       if (item.isDirectory()) {
         searchDir(fullPath);
       } else if (item.name.endsWith('.md')) {
-        const relPath = relative(DOCS_DIR, fullPath).replace(/\\/g, '/');
+        const relPath = relative(getDocsDir(), fullPath).replace(/\\/g, '/');
         const nameMatch = item.name.toLowerCase().includes(query);
 
         try {
@@ -3188,7 +3188,7 @@ app.get('/api/docs/search', (req, res) => {
     }
   }
 
-  searchDir(DOCS_DIR);
+  searchDir(getDocsDir());
   // Sort: name matches first
   results.sort((a, b) => (b.nameMatch ? 1 : 0) - (a.nameMatch ? 1 : 0));
   res.json(results);
@@ -3199,8 +3199,8 @@ app.put('/api/docs/file', express.json({ limit: '2mb' }), (req, res) => {
   const { path: filePath, content } = req.body;
   if (!filePath || content == null) return res.status(400).json({ error: 'path and content required' });
 
-  const resolved = normalize(join(DOCS_DIR, filePath));
-  if (!resolved.startsWith(DOCS_DIR + sep) && resolved !== DOCS_DIR) {
+  const resolved = normalize(join(getDocsDir(), filePath));
+  if (!resolved.startsWith(getDocsDir() + sep) && resolved !== getDocsDir()) {
     return res.status(403).json({ error: 'access denied' });
   }
 
@@ -3227,8 +3227,8 @@ app.post('/api/docs/new-file', express.json(), (req, res) => {
 
   const safeName = name.endsWith('.md') ? name : name + '.md';
   const relPath = dir ? `${dir}/${safeName}` : safeName;
-  const resolved = normalize(join(DOCS_DIR, relPath));
-  if (!resolved.startsWith(DOCS_DIR + sep) && resolved !== DOCS_DIR) {
+  const resolved = normalize(join(getDocsDir(), relPath));
+  if (!resolved.startsWith(getDocsDir() + sep) && resolved !== getDocsDir()) {
     return res.status(403).json({ error: 'access denied' });
   }
 
@@ -3253,8 +3253,8 @@ app.post('/api/docs/new-folder', express.json(), (req, res) => {
   if (!name) return res.status(400).json({ error: 'name required' });
 
   const relPath = dir ? `${dir}/${name}` : name;
-  const resolved = normalize(join(DOCS_DIR, relPath));
-  if (!resolved.startsWith(DOCS_DIR + sep) && resolved !== DOCS_DIR) {
+  const resolved = normalize(join(getDocsDir(), relPath));
+  if (!resolved.startsWith(getDocsDir() + sep) && resolved !== getDocsDir()) {
     return res.status(403).json({ error: 'access denied' });
   }
 
@@ -3273,9 +3273,9 @@ app.post('/api/docs/new-folder', express.json(), (req, res) => {
 
 // Docs: git pull
 app.post('/api/docs/git/pull', (_req, res) => {
-  if (!existsSync(DOCS_DIR)) return res.status(404).json({ error: 'docs directory not found' });
+  if (!existsSync(getDocsDir())) return res.status(404).json({ error: 'docs directory not found' });
   try {
-    const output = execSync('git pull', { cwd: DOCS_DIR, timeout: 30000, encoding: 'utf-8' });
+    const output = execSync('git pull', { cwd: getDocsDir(), timeout: 30000, encoding: 'utf-8' });
     docsTreeCache = null;
     res.json({ ok: true, output: output.trim() });
   } catch (err) {
@@ -3285,14 +3285,14 @@ app.post('/api/docs/git/pull', (_req, res) => {
 
 // Docs: git push (add, commit, push)
 app.post('/api/docs/git/push', express.json(), (req, res) => {
-  if (!existsSync(DOCS_DIR)) return res.status(404).json({ error: 'docs directory not found' });
+  if (!existsSync(getDocsDir())) return res.status(404).json({ error: 'docs directory not found' });
   const message = (req.body && req.body.message) || 'Update docs from dashboard';
   try {
-    execSync('git add -A', { cwd: DOCS_DIR, timeout: 10000 });
-    const status = execSync('git status --porcelain', { cwd: DOCS_DIR, timeout: 5000, encoding: 'utf-8' }).trim();
+    execSync('git add -A', { cwd: getDocsDir(), timeout: 10000 });
+    const status = execSync('git status --porcelain', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
     if (!status) return res.json({ ok: true, output: 'Nothing to commit' });
-    execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: DOCS_DIR, timeout: 10000 });
-    const output = execSync('git push', { cwd: DOCS_DIR, timeout: 30000, encoding: 'utf-8' });
+    execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd: getDocsDir(), timeout: 10000 });
+    const output = execSync('git push', { cwd: getDocsDir(), timeout: 30000, encoding: 'utf-8' });
     res.json({ ok: true, output: output.trim() || 'Pushed successfully' });
   } catch (err) {
     res.status(500).json({ error: err.stderr || err.message });
@@ -3301,10 +3301,10 @@ app.post('/api/docs/git/push', express.json(), (req, res) => {
 
 // Docs: git status
 app.get('/api/docs/git/status', (_req, res) => {
-  if (!existsSync(DOCS_DIR)) return res.status(404).json({ error: 'docs directory not found' });
+  if (!existsSync(getDocsDir())) return res.status(404).json({ error: 'docs directory not found' });
   try {
-    const status = execSync('git status --porcelain', { cwd: DOCS_DIR, timeout: 5000, encoding: 'utf-8' }).trim();
-    const branch = execSync('git branch --show-current', { cwd: DOCS_DIR, timeout: 5000, encoding: 'utf-8' }).trim();
+    const status = execSync('git status --porcelain', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
+    const branch = execSync('git branch --show-current', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
     res.json({ branch, dirty: status.length > 0, files: status ? status.split('\n').length : 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3809,8 +3809,8 @@ app.post('/api/script/run', async (req, res) => {
 // API Client — collections CRUD
 // ---------------------------------------------------------------------------
 app.get('/api/collections', (_req, res) => {
-  let shared = readJsonFile('collections.json', [], DATA_DIR);
-  let private_ = readJsonFile('collections.json', [], PRIVATE_DATA_DIR);
+  let shared = readJsonFile('collections.json', [], getDataDir());
+  let private_ = readJsonFile('collections.json', [], getPrivateDataDir());
 
   // Seed with demo collection on first run (write to shared)
   if (shared.length === 0 && private_.length === 0) {
@@ -3818,7 +3818,7 @@ app.get('/api/collections', (_req, res) => {
     if (existsSync(seedPath)) {
       try {
         shared = JSON.parse(readFileSync(seedPath, 'utf8'));
-        writeJsonFile('collections.json', shared, DATA_DIR);
+        writeJsonFile('collections.json', shared, getDataDir());
       } catch { /* ignore seed errors */ }
     }
   }
@@ -3833,7 +3833,7 @@ app.get('/api/collections', (_req, res) => {
 });
 
 app.put('/api/collections', (req, res) => {
-  const target = req.query.target === 'shared' ? DATA_DIR : PRIVATE_DATA_DIR;
+  const target = req.query.target === 'shared' ? getDataDir() : getPrivateDataDir();
   // Strip _source markers before saving
   const cleaned = (Array.isArray(req.body) ? req.body : []).map(({ _source, ...rest }) => rest);
   writeJsonFile('collections.json', cleaned, target);
@@ -3903,7 +3903,7 @@ app.post('/api/collections/import', (req, res) => {
   }
 
   // Append to existing collections (imports go to private by default)
-  const target = req.query.target === 'shared' ? DATA_DIR : PRIVATE_DATA_DIR;
+  const target = req.query.target === 'shared' ? getDataDir() : getPrivateDataDir();
   const collections = readJsonFile('collections.json', [], target);
   collections.push(collection);
   writeJsonFile('collections.json', collections, target);
@@ -4088,7 +4088,7 @@ app.post('/api/collections/import-postman', (req, res) => {
     requests: converted.requests,
   };
 
-  const target = req.query.target === 'shared' ? DATA_DIR : PRIVATE_DATA_DIR;
+  const target = req.query.target === 'shared' ? getDataDir() : getPrivateDataDir();
   const collections = readJsonFile('collections.json', [], target);
   collections.push(collection);
   writeJsonFile('collections.json', collections, target);
@@ -4163,14 +4163,14 @@ app.put('/api/environments', (req, res) => {
 // API Client — history CRUD
 // ---------------------------------------------------------------------------
 app.get('/api/history', (_req, res) => {
-  res.json(readJsonFile('history.json', [], PRIVATE_DATA_DIR));
+  res.json(readJsonFile('history.json', [], getPrivateDataDir()));
 });
 
 app.post('/api/history', (req, res) => {
-  const history = readJsonFile('history.json', [], PRIVATE_DATA_DIR);
+  const history = readJsonFile('history.json', [], getPrivateDataDir());
   history.unshift({ ...req.body, timestamp: Date.now() });
   if (history.length > 200) history.length = 200;
-  writeJsonFile('history.json', history, PRIVATE_DATA_DIR);
+  writeJsonFile('history.json', history, getPrivateDataDir());
   res.json({ ok: true });
 });
 
@@ -4507,15 +4507,15 @@ app.get('/api/db/table/:schema/:table', async (req, res) => {
 // ---------------------------------------------------------------------------
 // DB Scripts file browser
 // ---------------------------------------------------------------------------
-const DB_SCRIPTS_DIR = join(DATA_DIR, 'db-scripts');
+function getDbScriptsDir() { return join(getDataDir(), 'db-scripts'); }
 
 function ensureScriptsDir() {
-  if (!existsSync(DB_SCRIPTS_DIR)) mkdirSync(DB_SCRIPTS_DIR, { recursive: true });
+  if (!existsSync(getDbScriptsDir())) mkdirSync(getDbScriptsDir(), { recursive: true });
 }
 
 function safScriptPath(relPath) {
-  const resolved = normalize(join(DB_SCRIPTS_DIR, relPath));
-  if (!resolved.startsWith(DB_SCRIPTS_DIR + sep) && resolved !== DB_SCRIPTS_DIR) return null;
+  const resolved = normalize(join(getDbScriptsDir(), relPath));
+  if (!resolved.startsWith(getDbScriptsDir() + sep) && resolved !== getDbScriptsDir()) return null;
   return resolved;
 }
 
@@ -4533,7 +4533,7 @@ function scanScriptsTree(dir, depth = 0) {
   for (const item of items) {
     if (item.name.startsWith('.')) continue;
     const fullPath = join(dir, item.name);
-    const relPath = relative(DB_SCRIPTS_DIR, fullPath).replace(/\\/g, '/');
+    const relPath = relative(getDbScriptsDir(), fullPath).replace(/\\/g, '/');
 
     if (item.isDirectory()) {
       const children = scanScriptsTree(fullPath, depth + 1);
@@ -4548,7 +4548,7 @@ function scanScriptsTree(dir, depth = 0) {
 // Tree
 app.get('/api/db/scripts/tree', (_req, res) => {
   ensureScriptsDir();
-  res.json(scanScriptsTree(DB_SCRIPTS_DIR));
+  res.json(scanScriptsTree(getDbScriptsDir()));
 });
 
 // Read file
@@ -5100,9 +5100,9 @@ httpServer.listen(PORT, () => {
   console.log(`\n  ${CONFIG.title || 'Dev Dashboard'}`);
   console.log(`  http://localhost:${PORT}\n`);
   console.log(`  Base dir: ${BASE_DIR}`);
-  console.log(`  Data dir: ${DATA_DIR}`);
-  console.log(`  Private dir: ${PRIVATE_DATA_DIR}`);
-  console.log(`  Docs dir: ${DOCS_DIR}`);
+  console.log(`  Data dir: ${getDataDir()}`);
+  console.log(`  Private dir: ${getPrivateDataDir()}`);
+  console.log(`  Docs dir: ${getDocsDir()}`);
   console.log(`  Platform: ${process.platform}`);
   console.log(`  Log dir: ${LOG_DIR}`);
   console.log(`  Logs: ${Object.keys(LOG_DEFS).join(', ')}\n`);

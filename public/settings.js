@@ -18,8 +18,6 @@ const SETTINGS_SECTIONS = [
       { key: 'title', label: 'Dashboard Title', type: 'text', placeholder: 'Dev Dashboard' },
       { key: 'projectsDir', label: 'Projects Directory', type: 'text', placeholder: 'C:\\Users\\you\\Projects', help: 'Absolute path to the folder containing all your repos' },
       { key: 'logDir', label: 'Log Directory', type: 'text', placeholder: '.devdash/logs', help: 'Relative to home directory' },
-      { key: 'dbRepo', label: 'DB Repo Directory', type: 'text', placeholder: 'my-db' },
-      { key: 'cliRepo', label: 'CLI Repo Directory', type: 'text', placeholder: 'my-cli' },
     ],
   },
   {
@@ -57,6 +55,15 @@ const SETTINGS_SECTIONS = [
     ],
   },
   {
+    key: 'dbMigrations',
+    title: 'DB Migrations',
+    icon: '\uD83D\uDDC3\uFE0F',
+    description: 'Database migration repo for the DB Migrations widget',
+    fields: [
+      { key: 'dbRepo', label: 'DB Repo Directory', type: 'text', placeholder: 'my-db', help: 'Repo directory containing database migrations (relative to projects directory)' },
+    ],
+  },
+  {
     key: 'externalMonitors',
     title: 'External Monitors',
     icon: '\uD83C\uDF10',
@@ -69,13 +76,17 @@ const SETTINGS_SECTIONS = [
       { key: 'url', label: 'URL', type: 'text', placeholder: 'https://...' },
       { key: 'type', label: 'Type', type: 'select', options: ['http', 'statuspage'] },
       { key: 'interval', label: 'Interval (sec)', type: 'number', placeholder: '30' },
+      { key: 'alarm', label: 'Alarm', type: 'select', options: ['on', 'off'], help: 'Audible alarm when this service is down. Visual status always shown.' },
     ],
   },
   {
     key: 'ado',
     title: 'Azure DevOps',
     icon: '\uD83D\uDCCB',
-    description: 'ADO integration settings. Requires ADO_PAT environment variable.',
+    description: 'ADO integration settings',
+    envVars: [
+      { envKey: 'ADO_PAT', label: 'Personal Access Token (ADO_PAT)', testEndpoint: '/api/ado/test' },
+    ],
     fields: [
       { key: 'ado.org', label: 'Organization', type: 'text', placeholder: 'my-org' },
       { key: 'ado.project', label: 'Project', type: 'text', placeholder: 'my-project' },
@@ -92,7 +103,10 @@ const SETTINGS_SECTIONS = [
     key: 'sentry',
     title: 'Sentry',
     icon: '\uD83D\uDC1B',
-    description: 'Sentry integration. Requires SENTRY_AUTH_TOKEN environment variable.',
+    description: 'Sentry integration',
+    envVars: [
+      { envKey: 'SENTRY_AUTH_TOKEN', label: 'Auth Token (SENTRY_AUTH_TOKEN)', testEndpoint: '/api/sentry/test' },
+    ],
     fields: [
       { key: 'sentry.org', label: 'Organization', type: 'text', placeholder: 'my-org' },
     ],
@@ -104,7 +118,10 @@ const SETTINGS_SECTIONS = [
     key: 'github',
     title: 'GitHub',
     icon: '\uD83D\uDC19',
-    description: 'GitHub integration. Requires GITHUB_TOKEN environment variable. Set org to enable member/repo pickers.',
+    description: 'GitHub integration. Set org to enable member/repo pickers.',
+    envVars: [
+      { envKey: 'GITHUB_TOKEN', label: 'GitHub Token (GITHUB_TOKEN)', testEndpoint: '/api/github/test' },
+    ],
     fields: [
       { key: 'github.org', label: 'Organization', type: 'text', placeholder: 'my-github-org' },
     ],
@@ -131,6 +148,9 @@ const SETTINGS_SECTIONS = [
     title: 'CLI Tools',
     icon: '\u2318',
     description: 'Custom CLI commands available in the CLI Tools widget',
+    fields: [
+      { key: 'cliRepo', label: 'CLI Repo Directory', type: 'text', placeholder: 'my-cli', help: 'Repo directory containing CLI scripts (relative to projects directory)' },
+    ],
     type: 'object-list',
     configKey: 'cliTools',
     objectFields: [
@@ -253,6 +273,7 @@ function renderSettings(container) {
   html += '<button class="btn settings-save-btn" id="settings-save-btn" disabled>Save All Changes</button>';
   html += '<span class="settings-status" id="settings-status"></span>';
   html += '<button class="btn settings-reload-btn" id="settings-reload-btn">Reload from Disk</button>';
+  html += '<button class="btn settings-collapse-btn" id="settings-collapse-all">Collapse All</button>';
   html += '</div>';
 
   for (const section of SETTINGS_SECTIONS) {
@@ -274,6 +295,28 @@ function renderSettings(container) {
 
 function renderSectionBody(section) {
   let html = '';
+
+  // Environment variables (tokens/secrets stored in .env, not config)
+  if (section.envVars) {
+    html += '<div class="settings-env-vars">';
+    for (const ev of section.envVars) {
+      html += `<div class="settings-field settings-env-field" data-env-key="${_esc(ev.envKey)}">`;
+      html += `<label class="settings-label">${_esc(ev.label)}</label>`;
+      html += `<div class="settings-env-row">`;
+      html += `<input type="password" class="settings-input settings-env-input" data-env-key="${_esc(ev.envKey)}" placeholder="Enter token..." autocomplete="off">`;
+      html += `<button class="btn settings-env-toggle-vis" data-env-key="${_esc(ev.envKey)}" title="Show/hide value">\uD83D\uDC41</button>`;
+      html += `<span class="settings-env-status" data-env-status="${_esc(ev.envKey)}"></span>`;
+      html += `<button class="btn settings-env-save" data-env-key="${_esc(ev.envKey)}">Save</button>`;
+      if (ev.testEndpoint) {
+        html += `<button class="btn settings-env-test" data-test-endpoint="${_esc(ev.testEndpoint)}" data-env-key="${_esc(ev.envKey)}">Test</button>`;
+      }
+      html += `</div>`;
+      html += `<span class="settings-env-test-result" data-test-result="${_esc(ev.envKey)}"></span>`;
+      html += `<span class="settings-help">Stored in .env file (never committed to git)</span>`;
+      html += `</div>`;
+    }
+    html += '</div>';
+  }
 
   // Simple fields
   if (section.fields) {
@@ -461,6 +504,16 @@ function wireSettingsEvents(container) {
   const saveBtn = container.querySelector('#settings-save-btn');
   const reloadBtn = container.querySelector('#settings-reload-btn');
   const statusEl = container.querySelector('#settings-status');
+  const collapseBtn = container.querySelector('#settings-collapse-all');
+
+  if (collapseBtn) {
+    collapseBtn.addEventListener('click', () => {
+      const sections = container.querySelectorAll('details.settings-section');
+      const allClosed = [...sections].every(d => !d.open);
+      sections.forEach(d => d.open = allClosed);
+      collapseBtn.textContent = allClosed ? 'Collapse All' : 'Expand All';
+    });
+  }
 
   function markDirty() {
     _settingsDirty = true;
@@ -772,6 +825,94 @@ function wireSettingsEvents(container) {
 
   // Render the local-only Visibility section
   renderVisibilitySection(container);
+
+  // Environment variable fields — load status and wire save/test/toggle buttons
+  loadEnvStatus(container);
+
+  // Save button
+  container.querySelectorAll('.settings-env-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.dataset.envKey;
+      const input = container.querySelector(`.settings-env-input[data-env-key="${key}"]`);
+      if (!input || !input.value.trim()) return;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      try {
+        const res = await fetch('/api/env', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: input.value.trim() }),
+        });
+        if (!res.ok) throw new Error('Failed to save');
+        input.value = '';
+        input.type = 'password';
+        input.placeholder = 'Updated — saved to .env';
+        loadEnvStatus(container);
+      } catch (err) {
+        btn.textContent = 'Error';
+      } finally {
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Save'; }, 1500);
+      }
+    });
+  });
+
+  // Show/hide toggle
+  container.querySelectorAll('.settings-env-toggle-vis').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = container.querySelector(`.settings-env-input[data-env-key="${btn.dataset.envKey}"]`);
+      if (!input) return;
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.classList.toggle('active', isPassword);
+    });
+  });
+
+  // Test connection button
+  container.querySelectorAll('.settings-env-test').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = btn.dataset.testEndpoint;
+      const key = btn.dataset.envKey;
+      const resultEl = container.querySelector(`[data-test-result="${key}"]`);
+      btn.disabled = true;
+      btn.textContent = 'Testing...';
+      if (resultEl) resultEl.innerHTML = '';
+      try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        if (data.ok) {
+          if (resultEl) resultEl.innerHTML = `<span class="env-test-pass">\u2705 ${_esc(data.message)}</span>`;
+        } else {
+          if (resultEl) resultEl.innerHTML = `<span class="env-test-fail">\u274C ${_esc(data.error)}</span>`;
+        }
+      } catch (err) {
+        if (resultEl) resultEl.innerHTML = `<span class="env-test-fail">\u274C ${_esc(err.message)}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test';
+      }
+    });
+  });
+}
+
+async function loadEnvStatus(container) {
+  try {
+    const res = await fetch('/api/env');
+    const data = await res.json();
+    for (const [key, info] of Object.entries(data)) {
+      const statusEl = container.querySelector(`[data-env-status="${key}"]`);
+      if (statusEl) {
+        if (info.set) {
+          statusEl.innerHTML = `<span class="env-set">\u2705 Set (${_esc(info.masked)})</span>`;
+        } else {
+          statusEl.innerHTML = `<span class="env-unset">\u26A0 Not set</span>`;
+        }
+      }
+      const input = container.querySelector(`.settings-env-input[data-env-key="${key}"]`);
+      if (input && info.set) {
+        input.placeholder = 'Token is set — enter new value to update';
+      }
+    }
+  } catch { /* ignore */ }
 }
 
 // ---------------------------------------------------------------------------

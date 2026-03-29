@@ -3,6 +3,7 @@
 WIDGET_REGISTRY['db-migrations'] = {
   title: 'DB Migrations',
   icon: '\uD83D\uDDC3\uFE0F',
+  settingsKey: 'dbMigrations',
   defaultSize: { w: 4, h: 5 },
   minW: 3,
   minH: 3,

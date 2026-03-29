@@ -162,11 +162,16 @@ let alarmOsc = null;
 let alarmGain = null;
 let alarmLfo = null;
 let latestMonitors = [];
-const mutedServices = new Set();
+const MUTED_SERVICES_KEY = 'dashboard-muted-services';
+const mutedServices = new Set(JSON.parse(localStorage.getItem(MUTED_SERVICES_KEY) || '[]'));
 const downSince = {};           // key → timestamp of first consecutive failure
 const ALARM_DELAY_MS = 3 * 60 * 1000; // 3 minutes before alarm sounds
 const ALARM_ENABLED_KEY = 'dashboard-alarm-enabled';
 let alarmEnabled = localStorage.getItem(ALARM_ENABLED_KEY) !== 'false'; // default on
+
+function saveMutedServices() {
+  localStorage.setItem(MUTED_SERVICES_KEY, JSON.stringify([...mutedServices]));
+}
 
 window.mutedServices = mutedServices;
 window.getAlarmEnabled = () => alarmEnabled;
@@ -239,7 +244,7 @@ function evaluateAlarm(monitors) {
     }
   }
   const confirmedDown = alarmEnabled && monitors.some(
-    (m) => (m.status === 'down' || m.status === 'unreachable') && downSince[m.key] && (now - downSince[m.key]) >= ALARM_DELAY_MS && !mutedServices.has(m.key),
+    (m) => (m.status === 'down' || m.status === 'unreachable') && m.alarm !== false && downSince[m.key] && (now - downSince[m.key]) >= ALARM_DELAY_MS && !mutedServices.has(m.key),
   );
   if (confirmedDown) startAlarm();
   else stopAlarm();

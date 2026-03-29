@@ -5940,6 +5940,44 @@ details.settings-section[open] > .settings-section-header::before {
   color: var(--overlay0);
   font-style: italic;
 }
+.settings-env-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-env-row .settings-input { flex: 1; }
+.settings-env-save {
+  padding: 4px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.settings-env-status {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.env-set { color: var(--green); }
+.env-unset { color: var(--yellow); }
+.settings-env-toggle-vis {
+  padding: 4px 8px;
+  font-size: 12px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.settings-env-toggle-vis:hover,
+.settings-env-toggle-vis.active { opacity: 1; }
+.settings-env-test {
+  padding: 4px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.settings-env-test-result {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+  min-height: 16px;
+}
+.env-test-pass { color: var(--green); }
+.env-test-fail { color: var(--red); }
 
 .settings-toggle {
   display: flex;

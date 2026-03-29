@@ -362,6 +362,7 @@ async function checkMonitor(monitor) {
 async function pollMonitor(monitor) {
   const result = await checkMonitor(monitor);
   result.interval = parseInt(monitor.interval) || 30;
+  result.alarm = monitor.alarm !== 'off'; // default on unless explicitly 'off'
   const idx = externalStatusCache.findIndex(r => r.key === monitor.key);
   if (idx >= 0) externalStatusCache[idx] = result;
   else externalStatusCache.push(result);
@@ -629,6 +630,96 @@ app.put('/api/config/section/:section', express.json(), (req, res) => {
     CONFIG[section] = value;
     writeFileSync(CONFIG_PATH, JSON.stringify(CONFIG, null, 2) + '\n', 'utf-8');
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Environment variables — read/write .env file for integration tokens
+// ---------------------------------------------------------------------------
+const ENV_PATH = join(__dirname, '.env');
+const MANAGED_ENV_KEYS = ['SENTRY_AUTH_TOKEN', 'ADO_PAT', 'GITHUB_TOKEN'];
+
+function readEnvFile() {
+  if (!existsSync(ENV_PATH)) return {};
+  const lines = readFileSync(ENV_PATH, 'utf-8').split('\n');
+  const vars = {};
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq < 0) continue;
+    vars[trimmed.slice(0, eq)] = trimmed.slice(eq + 1);
+  }
+  return vars;
+}
+
+function writeEnvFile(vars) {
+  // Preserve comments and structure, update/add managed keys
+  let lines = [];
+  if (existsSync(ENV_PATH)) {
+    lines = readFileSync(ENV_PATH, 'utf-8').split('\n');
+  }
+  const written = new Set();
+  // Update existing lines
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq < 0) continue;
+    const key = trimmed.slice(0, eq);
+    if (key in vars) {
+      lines[i] = `${key}=${vars[key]}`;
+      written.add(key);
+    }
+  }
+  // Append new keys
+  for (const [key, val] of Object.entries(vars)) {
+    if (!written.has(key)) {
+      lines.push(`${key}=${val}`);
+    }
+  }
+  // Ensure trailing newline
+  const content = lines.join('\n').replace(/\n*$/, '\n');
+  writeFileSync(ENV_PATH, content, 'utf-8');
+}
+
+// GET: return which managed keys are set (never expose values)
+app.get('/api/env', (_req, res) => {
+  const vars = readEnvFile();
+  const status = {};
+  for (const key of MANAGED_ENV_KEYS) {
+    const val = vars[key] || '';
+    status[key] = { set: val.length > 0, masked: val ? val.slice(0, 4) + '...' : '' };
+  }
+  res.json(status);
+});
+
+// PUT: update one or more env vars, then reload into process.env
+app.put('/api/env', express.json(), (req, res) => {
+  try {
+    const updates = req.body;
+    if (!updates || typeof updates !== 'object') {
+      return res.status(400).json({ error: 'Expected object with key/value pairs' });
+    }
+    // Only allow managed keys
+    const filtered = {};
+    for (const [key, val] of Object.entries(updates)) {
+      if (MANAGED_ENV_KEYS.includes(key) && typeof val === 'string') {
+        filtered[key] = val;
+      }
+    }
+    if (Object.keys(filtered).length === 0) {
+      return res.status(400).json({ error: 'No valid env vars to update' });
+    }
+    writeEnvFile(filtered);
+    // Reload into process.env so integrations pick up changes immediately
+    for (const [key, val] of Object.entries(filtered)) {
+      process.env[key] = val;
+    }
+    res.json({ ok: true, updated: Object.keys(filtered) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1753,6 +1844,8 @@ async function adoFetch(url) {
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`ADO API ${res.status}: ${res.statusText}`);
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('json')) throw new Error(`ADO API returned non-JSON response (${ct || 'no content-type'})`);
   return res.json();
 }
 
@@ -1762,6 +1855,18 @@ function isAdoConfigured() {
 
 app.get('/api/ado/status', (_req, res) => {
   res.json({ configured: isAdoConfigured() });
+});
+
+app.get('/api/ado/test', async (_req, res) => {
+  if (!getAdoPat()) return res.json({ ok: false, error: 'ADO_PAT not set' });
+  if (!ADO_ORG) return res.json({ ok: false, error: 'ADO organization not configured' });
+  try {
+    const url = `${ADO_BASE_URL}/${ADO_ORG}/_apis/projects?$top=1&api-version=7.1`;
+    await adoFetch(url);
+    res.json({ ok: true, message: `Connected to ${ADO_ORG}` });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
 });
 
 app.get('/api/ado/sprint', async (_req, res) => {
@@ -2477,6 +2582,22 @@ app.get('/api/github/status', (_req, res) => {
   res.json({ configured: isGithubConfigured() });
 });
 
+app.get('/api/github/test', async (_req, res) => {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) return res.json({ ok: false, error: 'GITHUB_TOKEN not set' });
+  try {
+    const r = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) throw new Error(`GitHub API ${r.status}: ${r.statusText}`);
+    const user = await r.json();
+    res.json({ ok: true, message: `Authenticated as ${user.login}` });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 app.get('/api/github/prs', async (_req, res) => {
   if (!isGithubConfigured()) return res.status(404).json({ error: 'GitHub not configured' });
   try {
@@ -2589,12 +2710,26 @@ async function sentryFetch(url) {
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`Sentry API ${res.status}: ${res.statusText}`);
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('json')) throw new Error(`Sentry API returned non-JSON response (${ct || 'no content-type'})`);
   return res.json();
 }
 
 app.get('/api/sentry/status', (_req, res) => {
   const token = getSentryToken();
   res.json({ configured: !!token });
+});
+
+app.get('/api/sentry/test', async (_req, res) => {
+  if (!getSentryToken()) return res.json({ ok: false, error: 'SENTRY_AUTH_TOKEN not set' });
+  if (!SENTRY_ORG) return res.json({ ok: false, error: 'Sentry organization not configured' });
+  try {
+    const url = `${SENTRY_BASE_URL}/api/0/organizations/${SENTRY_ORG}/`;
+    await sentryFetch(url);
+    res.json({ ok: true, message: `Connected to ${SENTRY_ORG}` });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
 });
 
 app.get('/api/sentry/issues', async (req, res) => {

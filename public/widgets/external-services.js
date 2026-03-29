@@ -15,14 +15,6 @@ WIDGET_REGISTRY['external-services'] = {
     this._handler = (monitors) => {
       grid.innerHTML = '';
 
-      // Clean stale muted services
-      if (window.mutedServices) {
-        for (const key of [...window.mutedServices]) {
-          const m = monitors.find(s => s.key === key);
-          if (!m || (m.status !== 'down' && m.status !== 'unreachable')) window.mutedServices.delete(key);
-        }
-      }
-
       const hiddenServices = typeof getHiddenServices === 'function' ? getHiddenServices() : new Set();
       const visibleMonitors = monitors.filter(m => !hiddenServices.has(m.key));
 
@@ -66,12 +58,14 @@ WIDGET_REGISTRY['external-services'] = {
         const muteBtn = document.createElement('button');
         const isMuted = window.mutedServices && window.mutedServices.has(m.key);
         muteBtn.className = 'btn-mute' + (isMuted ? ' muted' : '');
-        muteBtn.textContent = isMuted ? 'Muted' : 'Mute';
+        muteBtn.title = isMuted ? 'Alarm silenced — click to re-enable' : 'Silence alarm for this service';
+        muteBtn.textContent = isMuted ? '\uD83D\uDD07' : '\uD83D\uDD14';
         muteBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           if (!window.mutedServices) return;
           if (window.mutedServices.has(m.key)) window.mutedServices.delete(m.key);
           else window.mutedServices.add(m.key);
+          if (typeof saveMutedServices === 'function') saveMutedServices();
           this._handler(monitors);
         });
 

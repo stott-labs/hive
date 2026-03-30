@@ -97,6 +97,7 @@ const SETTINGS_SECTIONS = [
       { key: 'ado.prRepos',       label: 'PR Repos',         adoSource: '/api/ado/project-repos',   placeholder: 'repo-name' },
       { key: 'ado.workItemTypes', label: 'Work Item Types',  adoSource: '/api/ado/work-item-types', placeholder: 'Bug' },
       { key: 'ado.activeStates',  label: 'Active States',    adoSource: '/api/ado/work-item-states', placeholder: 'Active' },
+      { key: 'ado.pipelineIds',   label: 'Pipelines',        adoSource: '/api/ado/pipeline-list',   placeholder: '' },
     ],
   },
   {
@@ -596,27 +597,47 @@ function wireSettingsEvents(container) {
         if (!res.ok) throw new Error(await res.text());
         const available = await res.json();
         const currentList = deepGet(_settingsConfig, listPath) || [];
-        // Case-insensitive lookup maps: lower → original ADO name
-        const availableLower = new Map(available.map(item => [item.toLowerCase(), item]));
-        // Items in config but not found in ADO results (preserve them as orphans)
-        const notInAdo = currentList.filter(item => !availableLower.has(item.toLowerCase()));
-        // Pre-check ADO items that match current config (case-insensitive)
-        const currentLower = new Set(currentList.map(s => s.toLowerCase()));
+        // Support both plain strings and {label, value} objects
+        const isLabeled = available.length > 0 && typeof available[0] === 'object';
+        const currentSet = new Set(currentList.map(s => String(s).toLowerCase()));
         let html = '';
-        if (notInAdo.length) {
-          html += notInAdo.map(item =>
+        if (isLabeled) {
+          // Label/value mode — value stored, label displayed
+          const availableValues = new Set(available.map(item => String(item.value)));
+          const notInAdo = currentList.filter(item => !availableValues.has(String(item)));
+          if (notInAdo.length) {
+            html += notInAdo.map(item =>
+              `<label class="settings-ado-option">
+                <input type="checkbox" checked data-value="${_esc(String(item))}">
+                ${_esc(String(item))} <span class="settings-ado-orphan-badge">⚠ not found</span>
+              </label>`
+            ).join('');
+          }
+          html += available.map(item =>
             `<label class="settings-ado-option">
-              <input type="checkbox" checked data-value="${_esc(item)}">
-              ${_esc(item)} <span class="settings-ado-orphan-badge">⚠ not in ADO</span>
+              <input type="checkbox" ${currentSet.has(String(item.value).toLowerCase()) ? 'checked' : ''} data-value="${_esc(String(item.value))}">
+              ${_esc(item.label)}
+            </label>`
+          ).join('');
+        } else {
+          // Plain string mode (existing behaviour)
+          const availableLower = new Map(available.map(item => [item.toLowerCase(), item]));
+          const notInAdo = currentList.filter(item => !availableLower.has(String(item).toLowerCase()));
+          if (notInAdo.length) {
+            html += notInAdo.map(item =>
+              `<label class="settings-ado-option">
+                <input type="checkbox" checked data-value="${_esc(item)}">
+                ${_esc(item)} <span class="settings-ado-orphan-badge">⚠ not in ADO</span>
+              </label>`
+            ).join('');
+          }
+          html += available.map(item =>
+            `<label class="settings-ado-option">
+              <input type="checkbox" ${currentSet.has(item.toLowerCase()) ? 'checked' : ''} data-value="${_esc(item)}">
+              ${_esc(item)}
             </label>`
           ).join('');
         }
-        html += available.map(item =>
-          `<label class="settings-ado-option">
-            <input type="checkbox" ${currentLower.has(item.toLowerCase()) ? 'checked' : ''} data-value="${_esc(item)}">
-            ${_esc(item)}
-          </label>`
-        ).join('');
         optionsEl.innerHTML = html;
         _wireAdoCheckboxes(optionsEl, listPath, markDirty);
       } catch (err) {

@@ -2106,6 +2106,22 @@ app.get('/api/ado/prs', async (_req, res) => {
 // Pipeline / Build Status
 // ---------------------------------------------------------------------------
 
+// List all pipelines as {label, value} for the Settings picker
+app.get('/api/ado/pipeline-list', async (_req, res) => {
+  if (!isAdoConfigured()) return res.json([]);
+  try {
+    const url = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/pipelines?api-version=7.1`;
+    const data = await adoFetch(url);
+    const pipelines = (data.value || []).map(p => ({
+      label: p.folder && p.folder !== '\\' ? `${p.folder.replace(/^\\/, '')} / ${p.name}` : p.name,
+      value: p.id,
+    }));
+    res.json(pipelines);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/ado/pipelines', async (_req, res) => {
   if (!isAdoConfigured()) return res.json([]);
   try {
@@ -2125,8 +2141,8 @@ app.get('/api/ado/pipelines', async (_req, res) => {
       }
     }
 
-    // Filter to configured pipeline IDs if set
-    const allowedIds = CONFIG.ado?.pipelineIds;
+    // Filter to configured pipeline IDs if set (coerce strings → numbers for saved settings)
+    const allowedIds = CONFIG.ado?.pipelineIds?.map(Number);
     let pipelines = listData.value || [];
     if (allowedIds?.length) pipelines = pipelines.filter(p => allowedIds.includes(p.id));
 

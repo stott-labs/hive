@@ -287,7 +287,10 @@ Each works independently. Both installed is the full experience.
 ## Project Structure
 
 ```
-hive/
+{dev-project-a/}                # hive is expected to be a sibling 
+{dev-project-n+1/}              # User projects as sibling folder  
+hivemind/                       # (Optional - please fork the project) shared Claude Code configuration system
+hive/                           # This project folder
 ├── server.mjs                  # Express + Socket.IO backend
 ├── public/
 │   ├── index.html              # Single-page app shell
@@ -310,6 +313,7 @@ hive/
 ├── data/                       # Runtime data (all gitignored)
 │   ├── databases.example.json  # Template for DB connections
 │   ├── metrics.example.json    # Template for saved metrics
+│   ├── layout.json             # Dashboard layout configuration
 │   └── ...
 ├── dashboard.config.example.json  # Full config reference
 ├── setup.sh                    # macOS/Linux interactive setup

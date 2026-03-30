@@ -658,7 +658,29 @@ function initGridStack() {
     disableOneColumnMode: true,
   }, '#dashboard-grid');
 
-  grid.on('change', saveLayout);
+  // Lock the widget's vertical position during resize so width changes
+  // don't cause the widget to jump upward. GridStack's engine tries to
+  // repack on width change — we capture the original y on start and
+  // restore it on stop.
+  let _resizeOrigY = null;
+  let _resizeNode = null;
+  grid.on('resizestart', (_event, el) => {
+    grid.float(true);
+    _resizeNode = el;
+    _resizeOrigY = parseInt(el.getAttribute('gs-y'));
+  });
+  grid.on('resizestop', (_event, el) => {
+    // Restore the original row if GridStack moved the widget
+    const currentY = parseInt(el.getAttribute('gs-y'));
+    if (_resizeOrigY !== null && currentY !== _resizeOrigY) {
+      grid.update(el, { y: _resizeOrigY });
+    }
+    _resizeNode = null;
+    _resizeOrigY = null;
+    grid.float(false);
+    saveLayout();
+  });
+  grid.on('dragstop', () => saveLayout());
 }
 
 function getCurrentSnapshot() {

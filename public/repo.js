@@ -1135,10 +1135,16 @@ async function openRepoFileAtLine(repo, path, line) {
 window.openRepoFileAtLine = openRepoFileAtLine;
 
 // Public — called by other widgets to switch to a repo without opening a file
+let _pendingRepo = null;
 window.openRepo = async function(repo) {
-  const select = document.getElementById('repo-select');
-  if (select) select.value = repo;
-  await loadRepoTree(repo);
+  if (repoViewerReady) {
+    const select = document.getElementById('repo-select');
+    if (select) select.value = repo;
+    await loadRepoTree(repo);
+  } else {
+    // initRepo hasn't populated the dropdown yet — store and let it pick up after init
+    _pendingRepo = repo;
+  }
 };
 
 async function setActiveRepoTab(idx) {
@@ -1481,7 +1487,12 @@ async function initRepo() {
   const hashRepo  = hashMatch ? decodeURIComponent(hashMatch[1]) : null;
   const hashPath  = hashMatch ? hashMatch[2].split('/').map(decodeURIComponent).join('/') : null;
 
-  if (hashRepo) {
+  if (_pendingRepo) {
+    const target = _pendingRepo;
+    _pendingRepo = null;
+    select.value = target;
+    await loadRepoTree(target);
+  } else if (hashRepo) {
     // Ensure the repo is in the dropdown (it may not be if it was shared by someone else)
     if (!select.querySelector(`option[value="${hashRepo}"]`)) {
       const opt = document.createElement('option');

@@ -24,7 +24,8 @@
     "users": ["Developer Name"],
     "prRepos": ["my-api", "my-web"],
     "workItemTypes": ["Bug", "User Story", "Feature"],
-    "activeStates": ["Active", "New"]
+    "activeStates": ["Active", "New"],
+    "pipelineIds": [1, 2, 3]
   },
   "sentry": {
     "org": "my-sentry-org",

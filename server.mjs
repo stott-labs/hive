@@ -2109,37 +2109,67 @@ app.get('/api/ado/prs', async (_req, res) => {
 app.get('/api/ado/pipelines', async (_req, res) => {
   if (!isAdoConfigured()) return res.json([]);
   try {
-    const listUrl = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/pipelines?api-version=7.1`;
-    const data = await adoFetch(listUrl);
-    const pipelines = data.value || [];
+    const base = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}`;
+
+    // Fetch pipeline list + pending approvals in parallel
+    const [listData, approvalsData] = await Promise.all([
+      adoFetch(`${base}/_apis/pipelines?api-version=7.1`),
+      adoFetch(`${base}/_apis/pipelines/approvals?api-version=7.1-preview.1`).catch(() => ({ value: [] })),
+    ]);
+
+    // Build approvalId map: runId → approvalId
+    const approvalsByRun = {};
+    for (const a of (approvalsData.value || [])) {
+      if (a.status === 'pending' && a.pipeline?.id) {
+        approvalsByRun[a.pipeline.id] = a.id;
+      }
+    }
+
+    // Filter to configured pipeline IDs if set
+    const allowedIds = CONFIG.ado?.pipelineIds;
+    let pipelines = listData.value || [];
+    if (allowedIds?.length) pipelines = pipelines.filter(p => allowedIds.includes(p.id));
 
     const results = await Promise.all(pipelines.map(async (p) => {
       try {
-        const runsUrl = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/pipelines/${p.id}/runs?$top=1&api-version=7.1`;
-        const runsData = await adoFetch(runsUrl);
+        const runsData = await adoFetch(`${base}/_apis/pipelines/${p.id}/runs?$top=1&api-version=7.1`);
         const r = (runsData.value || [])[0] || null;
+        if (!r) return { id: p.id, name: p.name, folder: p.folder, latestRun: null };
+
+        // Normalise status: real ADO uses state+result, drone adds a status field
+        let status = r.status; // drone
+        if (!status) {
+          if (r.state === 'completed') status = r.result || 'succeeded';
+          else if (r.state === 'inProgress') status = 'running';
+          else status = r.state || 'unknown';
+        }
+
         return {
           id: p.id, name: p.name, folder: p.folder,
-          latestRun: r ? {
+          latestRun: {
             id: r.id,
             runNumber: r.name,
-            status: r.status || (r.state === 'completed' ? (r.result || 'succeeded') : r.state),
-            startTime: r.startTime,
-            finishTime: r.finishTime,
-            triggeredBy: r.triggeredBy?.displayName || '',
+            status,
+            startTime: r.startTime || r.createdDate,
+            finishTime: r.finishTime || r.finishedDate,
+            triggeredBy: r.triggeredBy?.displayName || r.requestedFor?.displayName || '',
+            // approvalId present → real ADO approval gate; approval obj → drone
+            approvalId: approvalsByRun[r.id] || null,
             approval: r.approval || null,
-          } : null,
+          },
         };
       } catch {
         return { id: p.id, name: p.name, folder: p.folder, latestRun: null };
       }
     }));
+
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Trigger a new pipeline run
 app.post('/api/ado/pipelines/:id/runs', async (req, res) => {
   if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
   try {
@@ -2151,6 +2181,23 @@ app.post('/api/ado/pipelines/:id/runs', async (req, res) => {
   }
 });
 
+// Approve via real ADO approvals API (PATCH with approvalId)
+app.post('/api/ado/pipelines/approvals/:approvalId', async (req, res) => {
+  if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
+  try {
+    const url = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/pipelines/approvals?api-version=7.1-preview.1`;
+    const data = await adoFetch(url, {
+      method: 'PATCH',
+      body: JSON.stringify([{ approvalId: req.params.approvalId, status: 'approved', comment: req.body?.comment || '' }]),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Approve via drone-style run endpoint (POST to runs/:runId/approve)
 app.post('/api/ado/pipelines/:id/runs/:runId/approve', async (req, res) => {
   if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
   try {

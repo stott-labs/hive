@@ -64,8 +64,14 @@ WIDGET_REGISTRY['pipelines'] = {
         ? _fmtDuration(new Date(r.finishTime) - new Date(r.startTime))
         : r.startTime ? _timeAgo(r.startTime) : '';
 
-      const approveBtn = (status === 'waiting')
-        ? `<button class="btn pipeline-approve-btn" data-pipeline="${p.id}" data-run="${r.id}" title="Approve deployment">Approve</button>`
+      // Real ADO: approvalId from approvals API; drone: approval obj on run
+      const needsApproval = status === 'waiting' || r.approvalId;
+      const approveBtn = needsApproval
+        ? `<button class="btn pipeline-approve-btn"
+             data-pipeline="${p.id}"
+             data-run="${r.id}"
+             data-approval="${r.approvalId || ''}"
+             title="Approve deployment">Approve</button>`
         : '';
 
       return `
@@ -86,7 +92,12 @@ WIDGET_REGISTRY['pipelines'] = {
         btn.disabled = true;
         btn.textContent = '…';
         try {
-          await fetch(`/api/ado/pipelines/${btn.dataset.pipeline}/runs/${btn.dataset.run}/approve`, { method: 'POST' });
+          // Real ADO: use approvalId with the approvals PATCH endpoint
+          // Drone: fall back to run-level approve endpoint
+          const url = btn.dataset.approval
+            ? `/api/ado/pipelines/approvals/${btn.dataset.approval}`
+            : `/api/ado/pipelines/${btn.dataset.pipeline}/runs/${btn.dataset.run}/approve`;
+          await fetch(url, { method: 'POST' });
           this._load(this._contentEl);
         } catch { btn.disabled = false; btn.textContent = 'Approve'; }
       });

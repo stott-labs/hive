@@ -35,7 +35,6 @@
     const panel       = document.getElementById('copilot-panel');
     const handle      = document.getElementById('copilot-resize-handle');
     const toggleBtn   = document.getElementById('copilot-toggle-btn');
-    const iconStrip   = document.getElementById('copilot-collapsed-icon');
     const logoBtn     = document.getElementById('copilot-logo-btn');
     if (!panel) return;
 
@@ -63,9 +62,6 @@
     // Header toggle button and logo both toggle collapse
     toggleBtn?.addEventListener('click', () => setCollapsed(!panel.classList.contains('collapsed')));
     logoBtn?.addEventListener('click', () => setCollapsed(true));
-
-    // Click icon strip to expand
-    iconStrip?.addEventListener('click', () => setCollapsed(false));
 
     // Resize by dragging
     let dragging = false;

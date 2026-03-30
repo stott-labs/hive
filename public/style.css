@@ -7820,25 +7820,8 @@ pre:hover .copilot-apply-btn { opacity: 1; }
 }
 
 .copilot-panel.collapsed {
-  width: 44px !important;
-  min-width: 44px;
-}
-
-/* Icon shown only when collapsed */
-.copilot-collapsed-icon {
   display: none;
-  position: absolute;
-  inset: 0;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--subtext0);
-  transition: color 0.15s;
 }
-.copilot-collapsed-icon:hover { color: var(--blue); }
-.copilot-panel.collapsed .copilot-collapsed-icon { display: flex; }
-.copilot-panel.collapsed .copilot-panel-body { display: none; }
-.copilot-panel.collapsed .copilot-resize-handle { display: none; }
 
 .copilot-resize-handle {
   width: 4px;

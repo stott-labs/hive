@@ -651,6 +651,8 @@ body {
 }
 
 .git-col-repo { color: var(--text); }
+.git-repo-link { background: none; border: none; padding: 0; font: inherit; color: var(--text); cursor: pointer; text-align: left; }
+.git-repo-link:hover { color: var(--blue); text-decoration: underline; }
 
 .branch-main { color: var(--green); }
 .branch-development { color: var(--teal); }

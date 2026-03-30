@@ -61,7 +61,7 @@ WIDGET_REGISTRY['git-status'] = {
         }
 
         row.innerHTML =
-          `<span class="git-col-repo">${esc(r.repo)}</span>` +
+          `<span class="git-col-repo"><button class="git-repo-link" data-repo="${esc(r.repo)}">${esc(r.repo)}</button></span>` +
           `<span class="git-col-branch"><button class="branch-switcher ${branchClass}" data-repo="${esc(r.repo)}" data-branch="${esc(r.branch)}" title="Switch branch">${esc(r.branch)} &#9662;</button></span>` +
           `<span class="git-col-status">${statusHtml}</span>` +
           `<span class="git-col-sync">${syncHtml}</span>` +
@@ -71,6 +71,12 @@ WIDGET_REGISTRY['git-status'] = {
           e.stopPropagation();
           if (typeof toggleHiddenRepo === 'function') await toggleHiddenRepo(r.repo);
           this._handler(repos);
+        });
+
+        row.querySelector('.git-repo-link').addEventListener('click', (e) => {
+          e.stopPropagation();
+          switchTab('repo');
+          if (typeof window.openRepo === 'function') window.openRepo(r.repo);
         });
 
         row.querySelector('.branch-switcher').addEventListener('click', async (e) => {

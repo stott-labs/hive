@@ -1134,6 +1134,13 @@ async function openRepoFileAtLine(repo, path, line) {
 }
 window.openRepoFileAtLine = openRepoFileAtLine;
 
+// Public — called by other widgets to switch to a repo without opening a file
+window.openRepo = async function(repo) {
+  const select = document.getElementById('repo-select');
+  if (select) select.value = repo;
+  await loadRepoTree(repo);
+};
+
 async function setActiveRepoTab(idx) {
   // Persist scroll of outgoing tab
   if (activeRepoTab >= 0 && monacoEditor && repoTabs[activeRepoTab]) {

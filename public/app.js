@@ -648,8 +648,8 @@ async function _loadLayoutsFromServer() {
 function initGridStack() {
   grid = GridStack.init({
     column: 12,
-    cellHeight: 74,
-    margin: 4,
+    cellHeight: 90,
+    margin: 8,
     animate: true,
     handle: '.widget-header',
     float: false,

@@ -1239,7 +1239,7 @@ body {
 /* Claude Usage */
 .claude-usage-panel {
   margin-top: 8px;
-  padding: 8px 10px;
+  padding: 12px 14px;
   background: var(--mantle);
   border: 1px solid var(--surface0);
   border-radius: 6px;
@@ -1248,34 +1248,34 @@ body {
 .claude-usage-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .claude-usage-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--mauve);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.claude-usage-grid { display: flex; flex-direction: column; gap: 5px; }
+.claude-usage-grid { display: flex; flex-direction: column; gap: 10px; }
 
 .claude-usage-row {
   display: grid;
-  grid-template-columns: 68px 1fr 32px auto;
+  grid-template-columns: 90px 1fr 40px auto;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 10px;
+  font-size: 13px;
 }
 
 .claude-usage-label { color: var(--subtext0); white-space: nowrap; }
 
 .claude-usage-bar-wrap {
-  height: 8px;
+  height: 10px;
   background: var(--surface0);
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
   min-width: 60px;
 }
@@ -1290,29 +1290,29 @@ body {
 .claude-usage-bar.warning { background: var(--yellow); }
 .claude-usage-bar.critical { background: var(--red); animation: pulse 1.5s ease-in-out infinite; }
 
-.claude-usage-pct { color: var(--text); font-size: 11px; font-weight: 600; text-align: right; white-space: nowrap; }
-.claude-usage-reset { color: var(--overlay0); font-size: 10px; white-space: nowrap; }
+.claude-usage-pct { color: var(--text); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+.claude-usage-reset { color: var(--overlay0); font-size: 12px; white-space: nowrap; }
 
 .claude-usage-extra {
-  margin-top: 4px;
-  font-size: 10px;
+  margin-top: 6px;
+  font-size: 12px;
   color: var(--subtext0);
 }
 .claude-usage-no-oauth {
-  margin: 8px 0;
-  padding: 6px 8px;
-  font-size: 11px;
+  margin: 10px 0;
+  padding: 8px 10px;
+  font-size: 13px;
   color: var(--subtext1);
   border-left: 2px solid var(--surface1);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .claude-usage-no-oauth a { color: var(--mauve); }
-.claude-usage-no-oauth code { font-size: 10px; color: var(--text); }
+.claude-usage-no-oauth code { font-size: 12px; color: var(--text); }
 
 .claude-usage-rate-limit {
-  margin: 4px 0;
-  padding: 4px 8px;
-  font-size: 11px;
+  margin: 6px 0;
+  padding: 6px 10px;
+  font-size: 13px;
   color: var(--peach);
   background: rgba(250, 179, 135, 0.1);
   border-radius: 4px;
@@ -1322,16 +1322,16 @@ body {
 .claude-usage-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 6px;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--surface0);
 }
 
-.claude-stat { font-size: 11px; color: var(--subtext0); }
+.claude-stat { font-size: 13px; color: var(--subtext0); }
 .claude-stat-val { color: var(--text); font-weight: 600; }
 .claude-stat.today .claude-stat-val { color: var(--teal); }
-.claude-usage-note { font-size: 11px; color: var(--overlay0); font-style: italic; }
+.claude-usage-note { font-size: 12px; color: var(--overlay0); font-style: italic; }
 
 /* =========================================================================
    Status Section (now rendered inside widgets)
@@ -1738,32 +1738,32 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .releases-timeline {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
 .release-item {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: baseline;
 }
 
 .release-version {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--blue);
   white-space: nowrap;
-  min-width: 70px;
+  min-width: 80px;
 }
 
 .release-date {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--overlay0);
   white-space: nowrap;
-  min-width: 70px;
+  min-width: 80px;
 }
 
 .release-desc {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--subtext0);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2047,15 +2047,15 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .ado-pr-item {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  padding: 2px 0;
-  font-size: 11px;
+  padding: 6px 0;
+  font-size: 13px;
 }
 
 .ado-pr-repo {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--teal);
   white-space: nowrap;
 }
@@ -2092,28 +2092,28 @@ a.af-row:hover .af-text { text-decoration: underline; }
 /* =========================================================================
    GitHub Widget
    ========================================================================= */
-.github-setup { padding: 12px; color: var(--subtext0); line-height: 1.6; }
-.github-setup code { font-family: var(--font-mono); font-size: 11px; color: var(--teal); background: var(--surface0); padding: 1px 4px; border-radius: 3px; }
-.github-empty { color: var(--subtext0); font-size: 11px; padding: 4px 0 8px; }
-.github-empty code { font-family: var(--font-mono); font-size: 10px; color: var(--teal); }
+.github-setup { padding: 14px; color: var(--subtext0); line-height: 1.6; }
+.github-setup code { font-family: var(--font-mono); font-size: 13px; color: var(--teal); background: var(--surface0); padding: 2px 5px; border-radius: 3px; }
+.github-empty { color: var(--subtext0); font-size: 13px; padding: 6px 0 10px; }
+.github-empty code { font-family: var(--font-mono); font-size: 12px; color: var(--teal); }
 
 .github-pr-list,
-.github-actions-list { margin-bottom: 8px; }
+.github-actions-list { margin-bottom: 10px; }
 
 .github-pr-item,
 .github-run-item {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  padding: 3px 0;
-  font-size: 11px;
+  padding: 7px 0;
+  font-size: 13px;
   border-bottom: 1px solid var(--surface0);
 }
 
 .github-pr-repo,
 .github-run-repo {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--teal);
   white-space: nowrap;
   flex-shrink: 0;
@@ -2132,7 +2132,7 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .github-run-name a:hover { color: var(--blue); text-decoration: underline; }
 
 .github-pr-meta {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--subtext0);
   white-space: nowrap;
   flex-shrink: 0;
@@ -2140,18 +2140,18 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .github-badge {
   display: inline-block;
-  font-size: 9px;
-  padding: 0 4px;
+  font-size: 11px;
+  padding: 1px 6px;
   border-radius: 3px;
   vertical-align: middle;
-  margin-left: 4px;
+  margin-left: 5px;
 }
 .github-badge-draft { background: rgba(108,112,134,0.3); color: var(--subtext0); }
 
 .github-run-status {
-  font-size: 12px;
+  font-size: 14px;
   flex-shrink: 0;
-  width: 14px;
+  width: 18px;
   text-align: center;
 }
 .github-run-success      { color: var(--green); }
@@ -2161,7 +2161,7 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .github-run-branch {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--mauve);
   white-space: nowrap;
   flex-shrink: 0;
@@ -7887,47 +7887,47 @@ pre:hover .copilot-apply-btn { opacity: 1; }
 /* =========================================================================
    Commit History Widget
    ========================================================================= */
-.ch-filter-bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0 6px; }
-.ch-empty { font-size: 11px; color: var(--subtext0); padding: 8px 0; }
+.ch-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 8px; }
+.ch-empty { font-size: 13px; color: var(--subtext0); padding: 10px 0; }
 
-.ch-group { margin-bottom: 6px; }
+.ch-group { margin-bottom: 10px; }
 .ch-group-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
   color: var(--subtext0);
-  padding: 6px 0 3px;
+  padding: 8px 0 4px;
   border-bottom: 1px solid var(--surface1);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 .ch-row {
   display: grid;
-  grid-template-columns: 8px 52px 44px 1fr auto;
-  gap: 5px;
+  grid-template-columns: 10px 64px 52px 1fr auto;
+  gap: 7px;
   align-items: center;
-  padding: 3px 2px;
-  font-size: 11px;
+  padding: 6px 4px;
+  font-size: 13px;
   cursor: pointer;
   border-radius: 3px;
 }
 .ch-row:hover { background: var(--surface0); }
 .ch-dot {
-  width: 7px; height: 7px;
+  width: 9px; height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .ch-repo {
-  font-size: 10px; font-weight: 600;
+  font-size: 12px; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.ch-hash { font-family: var(--font-mono); font-size: 10px; color: var(--subtext0); flex-shrink: 0; }
+.ch-hash { font-family: var(--font-mono); font-size: 12px; color: var(--subtext0); flex-shrink: 0; }
 .ch-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.ch-meta { font-size: 10px; color: var(--subtext0); white-space: nowrap; flex-shrink: 0; }
+.ch-meta { font-size: 12px; color: var(--subtext0); white-space: nowrap; flex-shrink: 0; }
 .ch-time { color: var(--subtext0); }
 .ch-link { color: var(--blue); text-decoration: none; }
 .ch-link:hover { text-decoration: underline; }
-.ch-ref { color: var(--mauve); font-family: var(--font-mono); font-size: 10px; }
+.ch-ref { color: var(--mauve); font-family: var(--font-mono); font-size: 12px; }
 
 /* 8 repo colors cycling through accent palette */
 .ch-color-0 { background: var(--blue); }    .ch-color-text-0 { color: var(--blue); }

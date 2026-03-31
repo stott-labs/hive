@@ -4,6 +4,11 @@
 
 /* global marked, hljs, esc */
 
+// SVG tree icons — matches Repo tab style
+const ICON_FOLDER      = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+const ICON_FOLDER_OPEN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="1 9 1 19 23 19 23 9 12 9 10 6 1 6 1 9"/></svg>`;
+const ICON_FILE        = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--overlay1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+
 let docsTree = [];
 let searchTimeout = null;
 let selectedDir = '';  // last clicked/expanded directory path
@@ -167,7 +172,7 @@ function renderDocsTreeNodes(nodes, parent, depth) {
 
       const icon = document.createElement('span');
       icon.className = 'tree-icon';
-      icon.textContent = '\uD83D\uDCC1';
+      icon.innerHTML = expandedDirs.has(node.path) ? ICON_FOLDER_OPEN : ICON_FOLDER;
 
       const label = document.createElement('span');
       label.textContent = node.name;
@@ -198,7 +203,7 @@ function renderDocsTreeNodes(nodes, parent, depth) {
 
       const icon = document.createElement('span');
       icon.className = 'tree-icon';
-      icon.textContent = '\uD83D\uDCC4';
+      icon.innerHTML = ICON_FILE;
 
       const label = document.createElement('span');
       label.textContent = node.name.replace(/\.md$/, '');

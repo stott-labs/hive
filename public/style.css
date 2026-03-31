@@ -2869,13 +2869,13 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .docs-tree::-webkit-scrollbar-thumb { background: var(--surface1); border-radius: 2px; }
 
 .tree-item {
-  padding: 3px 12px;
+  padding: 5px 10px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--subtext0);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   transition: background 0.1s;
   white-space: nowrap;
   overflow: hidden;
@@ -2903,8 +2903,8 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .tree-item.dir.expanded::before { content: ''; }
 
 .tree-toggle {
-  font-size: 10px;
-  width: 12px;
+  font-size: 11px;
+  width: 14px;
   flex-shrink: 0;
   color: var(--overlay0);
   text-align: center;
@@ -2912,7 +2912,10 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .tree-icon {
   flex-shrink: 0;
-  font-size: 11px;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .docs-main {
@@ -3425,10 +3428,10 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .api-tree-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
+  gap: 6px;
+  padding: 5px 10px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--subtext0);
   transition: background 0.1s;
   user-select: none;
@@ -3438,8 +3441,8 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .api-tree-item.active { background: rgba(137,180,250,0.1); color: var(--blue); }
 
 .api-tree-toggle {
-  width: 12px;
-  font-size: 9px;
+  width: 14px;
+  font-size: 11px;
   color: var(--overlay0);
   text-align: center;
   flex-shrink: 0;
@@ -3447,9 +3450,10 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .api-tree-icon {
   flex-shrink: 0;
-  font-size: 11px;
-  width: 16px;
-  text-align: center;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .api-tree-name {
@@ -3468,9 +3472,9 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .api-tree-method {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 1px 4px;
+  padding: 2px 5px;
   border-radius: 2px;
   flex-shrink: 0;
 }
@@ -4918,11 +4922,11 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .db-tree-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
+  gap: 6px;
+  padding: 5px 10px;
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text);
   transition: background 0.1s;
 }
@@ -4930,26 +4934,26 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .db-tree-item:hover { background: var(--surface0); }
 
 .db-tree-schema-item { font-weight: 600; }
-.db-tree-group-item { padding-left: 16px; color: var(--subtext0); font-size: 11px; }
+.db-tree-group-item { padding-left: 20px; color: var(--subtext0); font-size: 13px; }
 
 .db-tree-table-item {
-  padding-left: 28px;
+  padding-left: 32px;
 }
 
 .db-tree-table-item:hover { background: rgba(137, 180, 250, 0.1); }
 .db-tree-table-item.active { background: rgba(137, 180, 250, 0.15); color: var(--blue); }
 
 .db-tree-col-item {
-  padding-left: 44px;
-  font-size: 11px;
+  padding-left: 48px;
+  font-size: 12px;
   color: var(--subtext0);
   cursor: default;
 }
 
 .db-tree-arrow {
   display: inline-block;
-  width: 12px;
-  font-size: 8px;
+  width: 14px;
+  font-size: 10px;
   color: var(--overlay0);
   transition: transform 0.15s;
   flex-shrink: 0;
@@ -4958,11 +4962,14 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .db-tree-arrow.open { transform: rotate(90deg); }
 
-.db-tree-arrow-spacer { display: inline-block; width: 12px; flex-shrink: 0; }
+.db-tree-arrow-spacer { display: inline-block; width: 14px; flex-shrink: 0; }
 
 .db-tree-icon {
-  font-size: 12px;
   flex-shrink: 0;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .db-tree-label {
@@ -5090,10 +5097,10 @@ a.af-row:hover .af-text { text-decoration: underline; }
 .db-script-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
+  gap: 6px;
+  padding: 5px 10px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -5118,15 +5125,16 @@ a.af-row:hover .af-text { text-decoration: underline; }
 
 .db-script-item .db-script-icon {
   flex-shrink: 0;
-  font-size: 11px;
-  width: 14px;
-  text-align: center;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .db-script-item .db-script-arrow {
   display: inline-block;
-  font-size: 8px;
-  width: 12px;
+  font-size: 10px;
+  width: 14px;
   text-align: center;
   flex-shrink: 0;
   transition: transform 0.15s;
@@ -6618,8 +6626,8 @@ details.settings-section[open] > .settings-section-header::before {
 .repo-tree-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
+  gap: 6px;
+  padding: 5px 8px;
   cursor: pointer;
   user-select: none;
   white-space: nowrap;

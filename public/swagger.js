@@ -2,6 +2,12 @@
    Dev Dashboard — API Client (Postman-like)
    ========================================================================== */
 
+// SVG tree icons — matches Repo tab style
+const ICON_FOLDER      = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+const ICON_FOLDER_OPEN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="1 9 1 19 23 19 23 9 12 9 10 6 1 6 1 9"/></svg>`;
+const ICON_FILE        = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--overlay1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+const ICON_COLLECTION  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--peach)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -2458,7 +2464,7 @@ function renderCollectionNode(container, coll, indent, filter) {
   const privBadge = coll.private ? '<span class="api-tree-private" title="Private — only visible to ' + esc(coll.owner || '?') + '">\u{1F512}</span>' : '';
   collItem.innerHTML = `
     <span class="api-tree-toggle">${expanded ? '\u25BE' : '\u25B8'}</span>
-    <span class="api-tree-icon">\u{1F4E6}</span>
+    <span class="api-tree-icon">${ICON_COLLECTION}</span>
     <span class="api-tree-name" style="font-weight:600;color:var(--text)">${esc(coll.name)}</span>
     ${privBadge}
   `;
@@ -2530,7 +2536,7 @@ function renderFolderNode(container, coll, folder, indent, parentPath, filter) {
   const folderPrivBadge = folder.private ? '<span class="api-tree-private" title="Private — only visible to ' + esc(folder.owner || '?') + '">\u{1F512}</span>' : '';
   folderItem.innerHTML = `
     <span class="api-tree-toggle">${expanded ? '\u25BE' : '\u25B8'}</span>
-    <span class="api-tree-icon">\u{1F4C1}</span>
+    <span class="api-tree-icon">${expanded ? ICON_FOLDER_OPEN : ICON_FOLDER}</span>
     <span class="api-tree-name">${esc(folder.name)}</span>
     ${folderPrivBadge}
   `;

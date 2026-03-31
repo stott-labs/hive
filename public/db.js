@@ -2,6 +2,14 @@
    Database Explorer — Client
    ========================================================================== */
 
+// SVG tree icons — matches Repo tab style
+const ICON_FOLDER      = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+const ICON_FOLDER_OPEN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="1 9 1 19 23 19 23 9 12 9 10 6 1 6 1 9"/></svg>`;
+const ICON_FILE        = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+const ICON_DB_SCHEMA   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`;
+const ICON_DB_TABLE    = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/><line x1="15" y1="9" x2="15" y2="21"/></svg>`;
+const ICON_DB_VIEW     = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--mauve)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
 // eslint-disable-next-line no-unused-vars
 function initDatabase() {
   if (!document.getElementById('db-editor')) return; // DB tab not present
@@ -478,7 +486,7 @@ function initDatabase() {
 
       schemaNode.innerHTML = `<div class="db-tree-item db-tree-schema-item">
         <span class="db-tree-arrow ${schemaOpen ? 'open' : ''}">\u25B6</span>
-        <span class="db-tree-icon">\uD83D\uDDC4</span>
+        <span class="db-tree-icon">${ICON_DB_SCHEMA}</span>
         <span class="db-tree-label">${esc(schemaName)}</span>
       </div>`;
 
@@ -501,7 +509,7 @@ function initDatabase() {
         groupNode.className = 'db-tree-group';
         groupNode.innerHTML = `<div class="db-tree-item db-tree-group-item">
           <span class="db-tree-arrow ${groupOpen ? 'open' : ''}">\u25B6</span>
-          <span class="db-tree-icon">${groupName === 'Tables' ? '\uD83D\uDDC3' : '\uD83D\uDC41'}</span>
+          <span class="db-tree-icon">${groupName === 'Tables' ? ICON_DB_TABLE : ICON_DB_VIEW}</span>
           <span class="db-tree-label">${groupName}</span>
           <span class="db-tree-count">${items.length}</span>
         </div>`;
@@ -1226,7 +1234,7 @@ function initDatabase() {
 
       if (item.type === 'dir') {
         const isOpen = scriptsExpanded.has(item.path);
-        el.innerHTML = `<span class="db-script-arrow ${isOpen ? 'open' : ''}">\u25B6</span><span class="db-script-icon">\uD83D\uDCC1</span><span class="db-script-name">${esc(item.name)}</span>`;
+        el.innerHTML = `<span class="db-script-arrow ${isOpen ? 'open' : ''}">\u25B6</span><span class="db-script-icon">${isOpen ? ICON_FOLDER_OPEN : ICON_FOLDER}</span><span class="db-script-name">${esc(item.name)}</span>`;
 
         el.addEventListener('click', (e) => {
           if (el.classList.contains('db-script-dragging')) return;
@@ -1254,7 +1262,7 @@ function initDatabase() {
           container.appendChild(childContainer);
         }
       } else {
-        el.innerHTML = `<span class="db-script-arrow" style="visibility:hidden">\u25B6</span><span class="db-script-icon" style="color:var(--blue)">\uD83D\uDCC4</span><span class="db-script-name">${esc(item.name)}</span>`;
+        el.innerHTML = `<span class="db-script-arrow" style="visibility:hidden">\u25B6</span><span class="db-script-icon">${ICON_FILE}</span><span class="db-script-name">${esc(item.name)}</span>`;
 
         el.addEventListener('click', () => { if (!el.classList.contains('db-script-dragging')) openScript(item.path); });
         el.addEventListener('contextmenu', (e) => {
@@ -1280,7 +1288,7 @@ function initDatabase() {
 
       if (item.type === 'dir') {
         const isOpen = scriptsExpanded.has(item.path);
-        el.innerHTML = `<span class="db-script-arrow ${isOpen ? 'open' : ''}">\u25B6</span><span class="db-script-icon">\uD83D\uDCC1</span><span class="db-script-name">${esc(item.name)}</span>`;
+        el.innerHTML = `<span class="db-script-arrow ${isOpen ? 'open' : ''}">\u25B6</span><span class="db-script-icon">${isOpen ? ICON_FOLDER_OPEN : ICON_FOLDER}</span><span class="db-script-name">${esc(item.name)}</span>`;
 
         el.addEventListener('click', (e) => {
           if (el.classList.contains('db-script-dragging')) return;
@@ -1303,7 +1311,7 @@ function initDatabase() {
           renderScriptsTreeItems(item.children, depth + 1, container);
         }
       } else {
-        el.innerHTML = `<span class="db-script-arrow" style="visibility:hidden">\u25B6</span><span class="db-script-icon" style="color:var(--blue)">\uD83D\uDCC4</span><span class="db-script-name">${esc(item.name)}</span>`;
+        el.innerHTML = `<span class="db-script-arrow" style="visibility:hidden">\u25B6</span><span class="db-script-icon">${ICON_FILE}</span><span class="db-script-name">${esc(item.name)}</span>`;
 
         el.addEventListener('click', () => { if (!el.classList.contains('db-script-dragging')) openScript(item.path); });
         el.addEventListener('contextmenu', (e) => {

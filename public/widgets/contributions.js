@@ -171,8 +171,8 @@ WIDGET_REGISTRY['contributions'] = {
     const GAP      = 4;                    // gap between adjacent hexes
     const COL_STEP = HR * 1.5 + GAP;      // x spacing between column centers
     const ROW_STEP = HH + GAP;            // y spacing between rows
-    const GX       = 20;                   // left offset (room for day labels incl. "Th")
-    const GY       = 18;                   // top offset (room for month labels)
+    const GX       = 26;                   // left offset (room for day labels incl. "Th")
+    const GY       = 28;                   // top offset (room for month labels)
 
     const DAY_LABELS  = ['M','T','W','Th','F','Sa','Su'];
     const visibleRows = this._hideWeekends ? [0,1,2,3,4] : [0,1,2,3,4,5,6];
@@ -193,7 +193,7 @@ WIDGET_REGISTRY['contributions'] = {
     const svgH = Math.ceil(GY + (numRows - 1) * ROW_STEP + HH / 2 + 4);
 
     const monthSvg = monthMarks.map(({ weekIdx: wi, label }) =>
-      `<text x="${colX(wi).toFixed(1)}" y="11" class="contrib-svg-label">${esc(label)}</text>`
+      `<text x="${colX(wi).toFixed(1)}" y="14" class="contrib-svg-label">${esc(label)}</text>`
     ).join('');
 
     const daySvg = visibleRows.map((row, visRow) =>

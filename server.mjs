@@ -971,7 +971,8 @@ app.post('/api/repos/:repo/file', express.json({ limit: '10mb' }), (req, res) =>
     const parentDir = fullPath.split(sep).slice(0, -1).join(sep);
     if (!existsSync(parentDir)) mkdirSync(parentDir, { recursive: true });
     writeFileSync(fullPath, content, 'utf-8');
-    res.json({ ok: true });
+    const mtime = statSync(fullPath).mtimeMs;
+    res.json({ ok: true, mtime });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

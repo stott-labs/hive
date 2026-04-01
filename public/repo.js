@@ -1240,8 +1240,10 @@ async function saveCurrentFile() {
       body: JSON.stringify({ path: tab.path, content }),
     });
     if (!resp.ok) { showToast('Save failed', 'error'); return; }
+    const { mtime } = await resp.json();
     tab.content = content;
     tab.dirty   = false;
+    tab.mtime   = mtime ?? null;
     renderRepoTabBar();
     showToast(`Saved ${tab.path.split('/').pop()}`, 'success');
   } catch {

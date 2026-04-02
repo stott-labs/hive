@@ -1,5 +1,14 @@
 /* Widget: github */
 
+function _ghTimeAgo(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
 WIDGET_REGISTRY['github'] = {
   title: 'GitHub',
   icon: '\uD83D\uDC19',
@@ -61,7 +70,7 @@ WIDGET_REGISTRY['github'] = {
         html += `<div class="github-pr-item">
           <span class="github-pr-repo">${esc(repoShort)}</span>
           <span class="github-pr-title"><a href="${esc(pr.url)}" target="_blank">${esc(pr.title)}</a>${draft}</span>
-          <span class="github-pr-meta">${esc(pr.author)}</span>
+          <span class="github-pr-meta">${esc(pr.author)} · updated ${_ghTimeAgo(pr.updatedAt)}</span>
         </div>`;
       }
       html += `</div>`;

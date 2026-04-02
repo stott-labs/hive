@@ -2914,6 +2914,7 @@ app.get('/api/github/prs', async (_req, res) => {
             targetBranch: pr.base?.ref || '',
             url: pr.html_url,
             createdAt: pr.created_at,
+            updatedAt: pr.updated_at,
             draft: pr.draft || false,
           });
         }

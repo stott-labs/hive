@@ -21,6 +21,7 @@ WIDGET_REGISTRY['github'] = {
     contentEl.innerHTML = `<div class="panel-body" id="widget-github-content">${skeletonRows(5, 'list')}</div>`;
     this._cachedPrs = [];
     this._cachedActions = [];
+    this._cachedActivity = [];
     this._interval = setInterval(() => this._load(contentEl), 120000);
     this._load(contentEl);
   },
@@ -39,12 +40,14 @@ WIDGET_REGISTRY['github'] = {
         return;
       }
       el.innerHTML = skeletonRows(4, 'list');
-      const [prsRes, actionsRes] = await Promise.all([
+      const [prsRes, actionsRes, activityRes] = await Promise.all([
         fetch('/api/github/prs'),
         fetch('/api/github/actions'),
+        fetch('/api/github/repo-activity'),
       ]);
-      this._cachedPrs     = prsRes.ok     ? await prsRes.json()     : [];
-      this._cachedActions = actionsRes.ok ? await actionsRes.json() : [];
+      this._cachedPrs      = prsRes.ok      ? await prsRes.json()      : [];
+      this._cachedActions  = actionsRes.ok  ? await actionsRes.json()  : [];
+      this._cachedActivity = activityRes.ok ? await activityRes.json() : [];
       this._render(contentEl);
     } catch (err) {
       if (el) el.innerHTML = `<span class="panel-loading">Error: ${esc(err.message)}</span>`;
@@ -54,12 +57,29 @@ WIDGET_REGISTRY['github'] = {
   _render(contentEl) {
     const el = contentEl.querySelector('#widget-github-content');
     if (!el) return;
-    const prs     = this._cachedPrs;
-    const actions = this._cachedActions;
+    const prs      = this._cachedPrs;
+    const actions  = this._cachedActions;
+    const activity = this._cachedActivity;
     let html = '';
 
+    // Repo activity
+    if (activity.length) {
+      html += `<div class="section-title" style="margin-top:0">Recent Activity</div>`;
+      html += `<div class="github-activity-list">`;
+      for (const r of activity) {
+        const repoShort = r.repo.split('/').pop();
+        const when = r.pushedAt ? `Last push ${_ghTimeAgo(r.pushedAt)}` : 'No push data';
+        html += `<div class="github-activity-item">
+          <span class="github-activity-repo">${esc(repoShort)}</span>
+          <span class="github-activity-branch">${esc(r.defaultBranch || 'main')}</span>
+          <span class="github-activity-time">${esc(when)}</span>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
     // PRs
-    html += `<div class="section-title" style="margin-top:0">Open Pull Requests</div>`;
+    html += `<div class="section-title">Open Pull Requests</div>`;
     if (!prs.length) {
       html += `<div class="github-empty">No open PRs</div>`;
     } else {

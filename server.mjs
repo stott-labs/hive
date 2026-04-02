@@ -2928,6 +2928,23 @@ app.get('/api/github/prs', async (_req, res) => {
   }
 });
 
+app.get('/api/github/repo-activity', async (_req, res) => {
+  if (!isGithubConfigured()) return res.status(404).json({ error: 'GitHub not configured' });
+  const repoToken = getGithubRepoToken();
+  const repos = [...new Set([...(CONFIG.github?.prRepos || []), ...(CONFIG.github?.watchRepos || [])])];
+  try {
+    const results = await Promise.all(repos.map(async (fullName) => {
+      try {
+        const data = await githubFetch(`${GITHUB_API}/repos/${fullName}`, repoToken);
+        return { repo: fullName, pushedAt: data.pushed_at, defaultBranch: data.default_branch };
+      } catch { return { repo: fullName, pushedAt: null, defaultBranch: 'main' }; }
+    }));
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/github/actions', async (_req, res) => {
   if (!isGithubConfigured()) return res.status(404).json({ error: 'GitHub not configured' });
   try {

@@ -993,7 +993,8 @@ function openFile(path) {
     setActiveRepoTab(existingIdx);
     return;
   }
-  repoTabs.push({ repo: currentRepo, path, lang: getLang(path), content: null, model: null, dirty: false, scrollTop: 0, mtime: null });
+  const lang = getLang(path);
+  repoTabs.push({ repo: currentRepo, path, lang, content: null, model: null, dirty: false, scrollTop: 0, mtime: null, mdPreview: lang === 'markdown' });
   setActiveRepoTab(repoTabs.length - 1);
 }
 
@@ -1186,7 +1187,13 @@ async function setActiveRepoTab(idx) {
     }
     monacoEditor.setModel(tab.model);
     if (tab.scrollTop) monacoEditor.setScrollTop(tab.scrollTop);
-    monacoEditor.focus();
+    // Show MD preview or editor depending on tab state
+    if (tab.lang === 'markdown' && tab.mdPreview) {
+      showMdPreview(tab.content);
+    } else {
+      hideMdPreview();
+      monacoEditor.focus();
+    }
     // Reveal a specific line if requested (e.g. from global search)
     if (pendingRevealLine) {
       const lineNo = pendingRevealLine;
@@ -1352,6 +1359,31 @@ function renderRepoTabBar() {
       });
       toolbar.appendChild(wrapBtn);
 
+      // MD preview toggle (markdown files only)
+      const activeTab = repoTabs[activeRepoTab];
+      if (activeTab && activeTab.lang === 'markdown') {
+        const previewBtn = document.createElement('button');
+        previewBtn.id        = 'repo-md-preview-btn';
+        previewBtn.className = 'repo-toolbar-btn' + (activeTab.mdPreview ? ' active' : '');
+        previewBtn.title     = 'Toggle markdown preview';
+        previewBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview`;
+        previewBtn.addEventListener('click', () => {
+          activeTab.mdPreview = !activeTab.mdPreview;
+          previewBtn.classList.toggle('active', activeTab.mdPreview);
+          if (activeTab.mdPreview) {
+            showMdPreview(activeTab.content);
+          } else {
+            hideMdPreview();
+            waitForMonaco(() => {
+              initMonacoEditor();
+              monacoEditor.setModel(activeTab.model);
+              monacoEditor.focus();
+            });
+          }
+        });
+        toolbar.appendChild(previewBtn);
+      }
+
       // Copy-link button
       const btn = document.createElement('button');
       btn.id        = 'repo-copy-link-btn';
@@ -1385,11 +1417,40 @@ async function copyRepoLink() {
   }
 }
 
+function showMdPreview(content) {
+  const editor  = document.getElementById('repo-editor-container');
+  const preview = document.getElementById('repo-md-preview');
+  if (editor)  editor.style.display  = 'none';
+  if (preview) {
+    preview.style.display = 'block';
+    const html = typeof marked !== 'undefined'
+      ? marked.parse(content, { breaks: true, gfm: true })
+      : `<pre>${esc(content)}</pre>`;
+    preview.innerHTML = html;
+    preview.querySelectorAll('pre code').forEach(block => {
+      if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+    });
+  }
+}
+
+function hideMdPreview() {
+  const editor  = document.getElementById('repo-editor-container');
+  const preview = document.getElementById('repo-md-preview');
+  if (editor)  editor.style.display  = 'block';
+  if (preview) preview.style.display = 'none';
+}
+
 function showRepoEmpty(show) {
-  const empty  = document.getElementById('repo-empty');
-  const editor = document.getElementById('repo-editor-container');
-  if (empty)  empty.style.display  = show ? 'flex'  : 'none';
-  if (editor) editor.style.display = show ? 'none'  : 'block';
+  const empty   = document.getElementById('repo-empty');
+  const editor  = document.getElementById('repo-editor-container');
+  const preview = document.getElementById('repo-md-preview');
+  if (empty)  empty.style.display  = show ? 'flex' : 'none';
+  if (show) {
+    if (editor)  editor.style.display  = 'none';
+    if (preview) preview.style.display = 'none';
+  } else {
+    if (editor)  editor.style.display  = 'block';
+  }
 }
 
 // ---------------------------------------------------------------------------

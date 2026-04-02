@@ -7044,6 +7044,61 @@ details.settings-section[open] > .settings-section-header::before {
   inset: 0;
 }
 
+#repo-md-preview {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: var(--base);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+#repo-md-preview h1, #repo-md-preview h2, #repo-md-preview h3,
+#repo-md-preview h4, #repo-md-preview h5, #repo-md-preview h6 {
+  color: var(--text);
+  margin: 1.4em 0 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+#repo-md-preview h1 { font-size: 1.6em; border-bottom: 1px solid var(--surface1); padding-bottom: 0.3em; }
+#repo-md-preview h2 { font-size: 1.3em; border-bottom: 1px solid var(--surface1); padding-bottom: 0.2em; }
+#repo-md-preview h3 { font-size: 1.1em; }
+#repo-md-preview p { margin: 0.6em 0; }
+#repo-md-preview a { color: var(--blue); text-decoration: underline; }
+#repo-md-preview a:hover { color: var(--sapphire); }
+#repo-md-preview code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface0);
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+  color: var(--peach);
+}
+#repo-md-preview pre {
+  background: var(--crust);
+  border: 1px solid var(--surface1);
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+#repo-md-preview pre code { background: none; padding: 0; color: inherit; font-size: 0.875em; }
+#repo-md-preview blockquote {
+  border-left: 3px solid var(--surface2);
+  margin: 0.8em 0;
+  padding: 0.4em 0 0.4em 1em;
+  color: var(--subtext0);
+}
+#repo-md-preview ul, #repo-md-preview ol { padding-left: 1.6em; margin: 0.5em 0; }
+#repo-md-preview li { margin: 0.2em 0; }
+#repo-md-preview table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9em; }
+#repo-md-preview th, #repo-md-preview td { border: 1px solid var(--surface1); padding: 6px 12px; text-align: left; }
+#repo-md-preview th { background: var(--surface0); font-weight: 600; }
+#repo-md-preview tr:nth-child(even) td { background: var(--mantle); }
+#repo-md-preview img { max-width: 100%; border-radius: 4px; }
+#repo-md-preview hr { border: none; border-top: 1px solid var(--surface1); margin: 1.5em 0; }
+
 /* Tab drag-and-drop reordering */
 .tab.tab-dragging {
   opacity: 0.4;

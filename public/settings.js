@@ -408,6 +408,7 @@ function renderSectionBody(section) {
   // Global alarm toggle — shown at top of External Monitors section
   if (section.key === 'externalMonitors') {
     const on = typeof window.getAlarmEnabled === 'function' ? window.getAlarmEnabled() : true;
+    const notifyOn = typeof window.getClaudeNotifyEnabled === 'function' ? window.getClaudeNotifyEnabled() : true;
     html += `
       <div class="settings-alarm-toggle-row">
         <div class="settings-alarm-toggle-text">
@@ -418,6 +419,17 @@ function renderSectionBody(section) {
           <input type="checkbox" id="settings-alarm-enabled" ${on ? 'checked' : ''}>
           <span class="settings-big-toggle-track"><span class="settings-big-toggle-thumb"></span></span>
           <span class="settings-big-toggle-state">${on ? 'On' : 'Off'}</span>
+        </label>
+      </div>
+      <div class="settings-alarm-toggle-row">
+        <div class="settings-alarm-toggle-text">
+          <span class="settings-alarm-toggle-label">Claude Notification Sound</span>
+          <span class="settings-alarm-toggle-desc">Plays a chime through the dashboard when Claude Code finishes working and is waiting for your input or a permission decision.</span>
+        </div>
+        <label class="settings-big-toggle">
+          <input type="checkbox" id="settings-claude-notify-enabled" ${notifyOn ? 'checked' : ''}>
+          <span class="settings-big-toggle-track"><span class="settings-big-toggle-thumb"></span></span>
+          <span class="settings-big-toggle-state">${notifyOn ? 'On' : 'Off'}</span>
         </label>
       </div>`;
   }
@@ -536,6 +548,16 @@ function wireSettingsEvents(container) {
       if (typeof window.setAlarmEnabled === 'function') window.setAlarmEnabled(alarmToggle.checked);
       const stateEl = alarmToggle.closest('.settings-big-toggle')?.querySelector('.settings-big-toggle-state');
       if (stateEl) stateEl.textContent = alarmToggle.checked ? 'On' : 'Off';
+    });
+  }
+
+  // Claude notification sound toggle (not a config field — stored in localStorage)
+  const claudeNotifyToggle = container.querySelector('#settings-claude-notify-enabled');
+  if (claudeNotifyToggle) {
+    claudeNotifyToggle.addEventListener('change', () => {
+      if (typeof window.setClaudeNotifyEnabled === 'function') window.setClaudeNotifyEnabled(claudeNotifyToggle.checked);
+      const stateEl = claudeNotifyToggle.closest('.settings-big-toggle')?.querySelector('.settings-big-toggle-state');
+      if (stateEl) stateEl.textContent = claudeNotifyToggle.checked ? 'On' : 'Off';
     });
   }
 

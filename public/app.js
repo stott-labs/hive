@@ -267,6 +267,52 @@ function evaluateAlarm(monitors) {
 window.evaluateAlarm = evaluateAlarm;
 
 // ---------------------------------------------------------------------------
+// Claude Code notification sound — plays when Claude is awaiting input
+// ---------------------------------------------------------------------------
+const CLAUDE_NOTIFY_KEY = 'dashboard-claude-notify-enabled';
+let claudeNotifyEnabled = localStorage.getItem(CLAUDE_NOTIFY_KEY) !== 'false'; // default on
+
+window.getClaudeNotifyEnabled = () => claudeNotifyEnabled;
+window.setClaudeNotifyEnabled = (val) => {
+  claudeNotifyEnabled = val;
+  localStorage.setItem(CLAUDE_NOTIFY_KEY, val ? 'true' : 'false');
+};
+
+function playNotificationDing() {
+  if (!claudeNotifyEnabled) return;
+  if (!audioUnlocked) return;
+  if (audioCtx.state === 'suspended') return;
+
+  // Two-tone doorbell: high note then lower note
+  const notes = [
+    { freq: 1047, start: 0,    dur: 0.25 },  // C6
+    { freq:  784, start: 0.22, dur: 0.35 },  // G5
+  ];
+
+  for (const { freq, start, dur } of notes) {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const t = audioCtx.currentTime + start;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.4, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+    osc.start(t);
+    osc.stop(t + dur);
+  }
+}
+
+socket.on('claude-notification', ({ type, message }) => {
+  playNotificationDing();
+});
+
+// ---------------------------------------------------------------------------
 // Utility: HTML escape
 // ---------------------------------------------------------------------------
 function esc(str) {

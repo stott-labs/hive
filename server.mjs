@@ -5097,6 +5097,16 @@ app.put('/api/layouts', express.json({ limit: '2mb' }), (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Claude Code notification hook endpoint
+// Called by the Claude Code Notification hook to signal "awaiting input"
+// ---------------------------------------------------------------------------
+app.post('/api/claude/notify', express.json(), (req, res) => {
+  const { type = 'notification', message = '', project = '' } = req.body || {};
+  io.emit('claude-notification', { type, message, project, ts: Date.now() });
+  res.json({ ok: true });
+});
+
+// ---------------------------------------------------------------------------
 // Socket.IO connection handler
 // ---------------------------------------------------------------------------
 io.on('connection', (socket) => {

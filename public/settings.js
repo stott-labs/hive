@@ -347,6 +347,7 @@ function renderSectionBody(section) {
   if (section.extraLists) {
     for (const list of section.extraLists) {
       const items = deepGet(_settingsConfig, list.key) || [];
+      if (list.adoSource && section.key === 'github' && !deepGet(_settingsConfig, 'github.org')) continue;
       if (list.adoSource) {
         // ADO-backed picker: checkboxes populated by fetching from ADO
         html += `<div class="settings-list-block settings-ado-picker" data-list-path="${list.key}" data-ado-source="${_esc(list.adoSource)}">`;

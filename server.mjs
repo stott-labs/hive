@@ -2820,7 +2820,7 @@ app.get('/api/repos/discover', async (_req, res) => {
     }
 
     results.sort((a, b) => a.name.localeCompare(b.name));
-    res.json(results);
+    res.json({ baseDir: BASE_DIR, repos: results });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -2240,6 +2240,13 @@ a.af-row:hover .af-text { text-decoration: underline; }
   align-items: center;
 }
 .repo-disc-clone-inputs .settings-input { flex: 1; font-size: 11px; }
+.repo-disc-clone-basedir {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--subtext0);
+  white-space: nowrap;
+  user-select: none;
+}
 
 .repo-disc-clone-output {
   margin-top: 8px;

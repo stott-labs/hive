@@ -955,7 +955,7 @@ function wireRepoDiscovery(container, markDirty) {
     rowEl.querySelector('.repo-disc-actions').innerHTML = `<span class="repo-disc-tracked">✓ tracked</span>`;
   }
 
-  function renderDiscoveryResults(repos) {
+  function renderDiscoveryResults(repos, baseDir) {
     if (!repos.length) {
       resultsEl.innerHTML = '<div class="repo-disc-empty">No repos found. Make sure ADO or GitHub is configured.</div>';
       return;
@@ -989,9 +989,14 @@ function wireRepoDiscovery(container, markDirty) {
       </div>`;
 
       if (!r.found && !isTracked) {
-        html += `<div class="repo-disc-clone-panel" data-name="${_esc(r.name)}" style="display:none">
+        const suggestedPath = r.localPath || '';
+        const folderName = baseDir && suggestedPath.startsWith(baseDir + '/')
+          ? suggestedPath.slice(baseDir.length + 1)
+          : suggestedPath.split('/').pop() || r.name;
+        html += `<div class="repo-disc-clone-panel" data-name="${_esc(r.name)}" data-basedir="${_esc(baseDir)}" style="display:none">
           <div class="repo-disc-clone-inputs">
-            <input type="text" class="settings-input repo-disc-clone-path" value="${_esc(r.localPath || '')}">
+            <span class="repo-disc-clone-basedir">${_esc(baseDir)}/</span>
+            <input type="text" class="settings-input repo-disc-clone-folder" value="${_esc(folderName)}">
             <button class="btn repo-disc-clone-go">Clone</button>
           </div>
           <pre class="repo-disc-clone-output" style="display:none"></pre>
@@ -1026,10 +1031,12 @@ function wireRepoDiscovery(container, markDirty) {
         const rowEl = resultsEl.querySelector(`.repo-disc-row[data-name="${name}"]`);
         const source = rowEl?.dataset.source;
         const cloneUrl = rowEl?.dataset.cloneUrl;
-        const clonePath = panel.querySelector('.repo-disc-clone-path').value.trim();
+        const baseDir = panel.dataset.basedir || '';
+        const folder = panel.querySelector('.repo-disc-clone-folder').value.trim();
+        const clonePath = baseDir ? baseDir + '/' + folder : folder;
         const outputEl = panel.querySelector('.repo-disc-clone-output');
 
-        if (!clonePath) return;
+        if (!folder || !clonePath) return;
 
         btn.disabled = true;
         btn.textContent = 'Cloning…';
@@ -1083,8 +1090,11 @@ function wireRepoDiscovery(container, markDirty) {
     try {
       const res = await fetch('/api/repos/discover');
       if (!res.ok) throw new Error(await res.text());
-      const repos = await res.json();
-      renderDiscoveryResults(repos);
+      const data = await res.json();
+      // Support both new { baseDir, repos } and legacy array format
+      const repos = Array.isArray(data) ? data : (data.repos || []);
+      const baseDir = data.baseDir || '';
+      renderDiscoveryResults(repos, baseDir);
     } catch (err) {
       resultsEl.innerHTML = `<div class="repo-disc-empty" style="color:var(--red)">Error: ${_esc(err.message)}</div>`;
     } finally {

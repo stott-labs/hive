@@ -2982,20 +2982,21 @@ app.get('/api/github/org-repos', async (_req, res) => {
   if (!isGithubConfigured()) return res.status(404).json({ error: 'GitHub not configured' });
   const orgs = getGithubOrgs();
   if (!orgs.length) return res.status(400).json({ error: 'github.org not configured' });
+  const repoToken = getGithubRepoToken();
   const orgSet = new Set(orgs.map(o => o.toLowerCase()));
   try {
     const all = new Set();
     const errors = [];
     for (const org of orgs) {
       try {
-        const data = await githubFetch(`${GITHUB_API}/orgs/${org}/repos?per_page=100&type=all&sort=full_name`);
+        const data = await githubFetch(`${GITHUB_API}/orgs/${org}/repos?per_page=100&type=all&sort=full_name`, repoToken);
         for (const r of (Array.isArray(data) ? data : [])) all.add(r.full_name);
       } catch (err) { errors.push(`${org}: ${err.message}`); }
     }
     // Also query /user/repos to catch private repos the token can access but the org
     // endpoint won't return (e.g. fine-grained PATs or limited-scope tokens).
     try {
-      const userData = await githubFetch(`${GITHUB_API}/user/repos?per_page=100&type=all&sort=full_name`);
+      const userData = await githubFetch(`${GITHUB_API}/user/repos?per_page=100&type=all&sort=full_name`, repoToken);
       for (const r of (Array.isArray(userData) ? userData : [])) {
         if (orgSet.has((r.owner?.login || '').toLowerCase())) all.add(r.full_name);
       }

@@ -449,14 +449,22 @@ WIDGET_REGISTRY['ado'] = {
 
         close();
         const skillCmd = isBug ? `create-bug` : `create-story`;
-        const DASH = window.DASH_CONFIG || {};
-        const wiUrl = DASH.adoOrg
-          ? `https://dev.azure.com/${DASH.adoOrg}/${encodeURIComponent(DASH.adoProject || '')}/_workitems/edit/${data.id}`
-          : null;
         const msg = `${isBug ? '🐛' : '🚀'} ${type} #${data.id} created — run /${skillCmd} ${data.id} in Claude Code to create a branch`;
         showToast(msg, 'success', 8000);
 
-        this._load(contentEl);
+        // Optimistically add to the board immediately — ADO's WIQL index
+        // lags 30-60s after creation so a fresh _load would miss it
+        this._cachedItems.unshift({
+          id: data.id,
+          title: data.title,
+          type: data.type,
+          state: data.state,
+          assignedTo: '',
+          createdDate: new Date().toISOString(),
+        });
+        this._render(contentEl);
+        // Background reload — will quietly replace once ADO indexes the item
+        setTimeout(() => this._load(contentEl), 15000);
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `${isBug ? '&#128027;' : '&#128640;'} Create ${esc(type)}`;

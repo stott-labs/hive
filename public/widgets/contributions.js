@@ -7,8 +7,7 @@ WIDGET_REGISTRY['contributions'] = {
   minW: 3, minH: 3,
 
   init(contentEl) {
-    this._author       = localStorage.getItem('contributions-author') || 'all';
-    this._sources      = new Set(JSON.parse(localStorage.getItem('contributions-sources') || '["github","ado"]'));
+    this._view         = localStorage.getItem('contributions-view') || 'all';
     this._hideWeekends = !!localStorage.getItem('contributions-hide-weekends');
     this._data         = { github: {}, ado: {} };
     contentEl.innerHTML = `
@@ -22,19 +21,21 @@ WIDGET_REGISTRY['contributions'] = {
     const body = contentEl.querySelector('#contrib-body');
     if (!body) return;
     try {
-      const params = new URLSearchParams({ days: 180 });
-      if (this._author !== 'all') params.set('author', this._author);
+      const view    = this._view;
+      const isAll   = view === 'all';
+      const isGh    = view === 'github';
+      const adoUser = view.startsWith('ado-') ? view.slice(4) : null;
 
-      // GitHub contribution calendar is per-authenticated-user only — skip when
-      // an ADO author filter is active since we can't map ADO names to GH logins.
-      const skipGh = this._author !== 'all';
+      const adoParams = new URLSearchParams({ days: 180 });
+      if (adoUser) adoParams.set('author', adoUser);
+
       const [ghRes, adoRes] = await Promise.all([
-        skipGh ? null : fetch(`/api/github/contributions?${params}`),
-        fetch(`/api/ado/contributions?${params}`),
+        (isAll || isGh)  ? fetch(`/api/github/contributions?days=180`) : Promise.resolve(null),
+        (isAll || adoUser) ? fetch(`/api/ado/contributions?${adoParams}`) : Promise.resolve(null),
       ]);
 
-      this._data.github = (ghRes?.ok) ? await ghRes.json() : {};
-      this._data.ado    = adoRes.ok   ? await adoRes.json() : {};
+      this._data.github = (ghRes?.ok)  ? await ghRes.json()  : {};
+      this._data.ado    = (adoRes?.ok) ? await adoRes.json() : {};
 
       this._renderFilterBar(contentEl);
       this._render(contentEl);
@@ -47,42 +48,26 @@ WIDGET_REGISTRY['contributions'] = {
     const bar = contentEl.querySelector('#contrib-filter-bar');
     if (!bar) return;
 
-    const SOURCE_LABELS = { github: 'GitHub', ado: 'ADO' };
     const users = window.DASH_CONFIG?.adoUsers || [];
 
-    let html = '';
-    // Source toggles
-    for (const [key, label] of Object.entries(SOURCE_LABELS)) {
-      const active = this._sources.has(key);
-      html += `<button class="ado-filter-chip contrib-src-chip${active ? ' active' : ''}" data-source="${key}">${label}</button>`;
-    }
-    html += `<span class="contrib-filter-sep"></span>`;
-    // Author filter
-    html += `<button class="ado-filter-chip${this._author === 'all' ? ' active' : ''}" data-author="all">All</button>`;
-    for (const u of users) {
-      html += `<button class="ado-filter-chip${this._author === u ? ' active' : ''}" data-author="${esc(u)}">${esc(u.split(' ')[0])}</button>`;
-    }
+    const views = [
+      { key: 'all',    label: 'All ADO + GitHub' },
+      ...users.map(u => ({ key: `ado-${u}`, label: `ADO \u2013 ${u.split(' ')[0]}` })),
+      { key: 'github', label: 'GitHub' },
+    ];
+
+    let html = views.map(({ key, label }) =>
+      `<button class="ado-filter-chip${this._view === key ? ' active' : ''}" data-view="${esc(key)}">${esc(label)}</button>`
+    ).join('');
+
     html += `<span class="contrib-filter-sep"></span>`;
     html += `<button class="ado-filter-chip${this._hideWeekends ? ' active' : ''}" data-toggle="weekends">Hide weekends</button>`;
     bar.innerHTML = html;
 
-    bar.querySelectorAll('.contrib-src-chip').forEach(btn => {
+    bar.querySelectorAll('[data-view]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const src = btn.dataset.source;
-        if (this._sources.has(src)) {
-          if (this._sources.size > 1) this._sources.delete(src); // keep at least one
-        } else {
-          this._sources.add(src);
-        }
-        localStorage.setItem('contributions-sources', JSON.stringify([...this._sources]));
-        this._renderFilterBar(contentEl);
-        this._render(contentEl);
-      });
-    });
-    bar.querySelectorAll('[data-author]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this._author = btn.dataset.author;
-        localStorage.setItem('contributions-author', this._author);
+        this._view = btn.dataset.view;
+        localStorage.setItem('contributions-view', this._view);
         this._load(contentEl);
       });
     });
@@ -98,9 +83,19 @@ WIDGET_REGISTRY['contributions'] = {
     const body = contentEl.querySelector('#contrib-body');
     if (!body) return;
 
+    const view    = this._view;
+    const isAll   = view === 'all';
+    const isGh    = view === 'github';
+    const isAdo   = view.startsWith('ado-');
+
+    // Determine which sources to include in the chart
+    const activeSources = [];
+    if (isAll || isAdo) activeSources.push('ado');
+    if (isAll || isGh)  activeSources.push('github');
+
     // Merge active sources into combined byDay map
     const byDay = {};
-    for (const src of this._sources) {
+    for (const src of activeSources) {
       for (const [day, count] of Object.entries(this._data[src] || {})) {
         if (!byDay[day]) byDay[day] = { total: 0, github: 0, ado: 0 };
         byDay[day][src]   = (byDay[day][src] || 0) + count;
@@ -110,7 +105,7 @@ WIDGET_REGISTRY['contributions'] = {
 
     const total = Object.values(byDay).reduce((s, d) => s + d.total, 0);
 
-    // Build 52-week grid
+    // Build 26-week grid
     const WEEKS = 26;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const start = new Date(today);
@@ -161,8 +156,8 @@ WIDGET_REGISTRY['contributions'] = {
 
     // Source legend
     const SRC_COLORS = { github: 'var(--green)', ado: 'var(--mauve)' };
-    const legendHtml = [...this._sources].map(s =>
-      `<span class="contrib-legend-dot" style="background:${SRC_COLORS[s]}"></span><span class="contrib-legend-label">${s === 'github' ? 'GitHub' : s.toUpperCase()}</span>`
+    const legendHtml = activeSources.map(s =>
+      `<span class="contrib-legend-dot" style="background:${SRC_COLORS[s]}"></span><span class="contrib-legend-label">${s === 'github' ? 'GitHub' : 'ADO'}</span>`
     ).join('');
 
     // Hex grid geometry — flat-top hexagons, rectangular grid (no stagger)

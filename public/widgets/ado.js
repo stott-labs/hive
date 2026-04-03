@@ -35,6 +35,11 @@ WIDGET_REGISTRY['ado'] = {
         <div class="ado-filter-bar" id="widget-ado-filter-bar"></div>
         <button class="ado-view-toggle" id="widget-ado-view-toggle" title="Toggle Kanban / List view">&#9776;</button>
       </div>
+      <div class="ado-search-row" id="widget-ado-search-row">
+        <input type="text" class="ado-search-input" id="widget-ado-search" placeholder="Search by title or #ID…" autocomplete="off">
+        <button class="ado-create-btn ado-create-bug" id="widget-ado-add-bug" title="Create a new Bug">&#128027; Bug</button>
+        <button class="ado-create-btn ado-create-story" id="widget-ado-add-story" title="Create a new User Story">&#128640; Story</button>
+      </div>
       <div class="panel-body" id="widget-ado-content">
         ${skeletonRows(5, 'table')}
       </div>
@@ -43,12 +48,22 @@ WIDGET_REGISTRY['ado'] = {
     this._userFilter = localStorage.getItem('ado-user-filter') || 'all';
     this._viewMode = localStorage.getItem('ado-view-mode') || 'list';
     this._cachedItems = [];
+    this._searchQuery = '';
 
     contentEl.querySelector('#widget-ado-view-toggle').addEventListener('click', () => {
       this._viewMode = this._viewMode === 'list' ? 'kanban' : 'list';
       localStorage.setItem('ado-view-mode', this._viewMode);
       this._render(contentEl);
     });
+
+    const searchInput = contentEl.querySelector('#widget-ado-search');
+    searchInput.addEventListener('input', () => {
+      this._searchQuery = searchInput.value.trim().toLowerCase();
+      this._render(contentEl);
+    });
+
+    contentEl.querySelector('#widget-ado-add-bug').addEventListener('click', () => this._showCreateModal(contentEl, 'Bug'));
+    contentEl.querySelector('#widget-ado-add-story').addEventListener('click', () => this._showCreateModal(contentEl, 'User Story'));
 
     this._interval = setInterval(() => this._load(contentEl), 60000);
     this._load(contentEl);
@@ -127,13 +142,15 @@ WIDGET_REGISTRY['ado'] = {
   },
 
   _renderList(el) {
-    const items = this._cachedItems;
+    const items = this._filteredItems();
     const DASH = window.DASH_CONFIG || {};
 
     let html = '';
     if (items.length > 0) {
       for (const group of this._defaultGroups) {
-        const groupItems = items.filter(wi => group.states.includes(wi.state));
+        const groupItems = items
+          .filter(wi => group.states.includes(wi.state))
+          .sort((a, b) => (b.createdDate || b.id) > (a.createdDate || a.id) ? 1 : -1);
         if (groupItems.length === 0) continue;
 
         html += `<div class="ado-wi-group">`;
@@ -152,14 +169,25 @@ WIDGET_REGISTRY['ado'] = {
     el.innerHTML = html || '<span class="panel-loading">No data</span>';
   },
 
+  _filteredItems() {
+    const q = this._searchQuery;
+    if (!q) return this._cachedItems;
+    return this._cachedItems.filter(wi =>
+      (wi.title || '').toLowerCase().includes(q) ||
+      String(wi.id).includes(q)
+    );
+  },
+
   _renderKanban(el) {
-    const items = this._cachedItems;
+    const items = this._filteredItems();
     const DASH = window.DASH_CONFIG || {};
     const orderedGroups = this._getOrderedGroups();
 
     let html = '<div class="ado-kanban">';
     for (const group of orderedGroups) {
-      const groupItems = items.filter(wi => group.states.includes(wi.state));
+      const groupItems = items
+        .filter(wi => group.states.includes(wi.state))
+        .sort((a, b) => (b.createdDate || b.id) > (a.createdDate || a.id) ? 1 : -1);
       html += `<div class="ado-kanban-col" data-target-state="${esc(group.targetState)}">
         <div class="ado-kanban-col-header" data-col-state="${esc(group.targetState)}">
           <span class="ado-kanban-col-drag">&#8942;&#8942;</span>
@@ -358,6 +386,83 @@ WIDGET_REGISTRY['ado'] = {
       <button class="ado-wi-action" data-cmd="/${skillCmd} ${wi.id}" title="Copy /${skillCmd} ${wi.id} to clipboard">${isBug ? '&#128027;' : '&#128640;'}</button>
       <span class="ado-wi-state">${esc(wi.state || '')}</span>
     </li>`;
+  },
+
+  _showCreateModal(contentEl, type) {
+    const existing = document.getElementById('ado-create-modal');
+    if (existing) existing.remove();
+
+    const isBug = type === 'Bug';
+    const overlay = document.createElement('div');
+    overlay.id = 'ado-create-modal';
+    overlay.className = 'ado-modal-overlay';
+    overlay.innerHTML = `
+      <div class="ado-modal">
+        <div class="ado-modal-header">
+          <span>${isBug ? '&#128027;' : '&#128640;'} New ${esc(type)}</span>
+          <button class="ado-modal-close" id="ado-modal-close">&#10005;</button>
+        </div>
+        <div class="ado-modal-body">
+          <label class="ado-modal-label">Title <span class="ado-modal-required">*</span></label>
+          <input type="text" class="ado-modal-input" id="ado-modal-title" placeholder="${isBug ? 'Short description of the bug' : 'User story title'}" autocomplete="off">
+          <label class="ado-modal-label" style="margin-top:10px">${isBug ? 'Repro Steps' : 'Description'} <span class="ado-modal-optional">(optional)</span></label>
+          <textarea class="ado-modal-textarea" id="ado-modal-desc" rows="4" placeholder="${isBug ? 'Steps to reproduce…' : 'As a user, I want to…'}"></textarea>
+        </div>
+        <div class="ado-modal-footer">
+          <button class="ado-modal-btn ado-modal-cancel" id="ado-modal-cancel">Cancel</button>
+          <button class="ado-modal-btn ado-modal-submit" id="ado-modal-submit">${isBug ? '&#128027;' : '&#128640;'} Create ${esc(type)}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.querySelector('#ado-modal-close').addEventListener('click', close);
+    overlay.querySelector('#ado-modal-cancel').addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+    const titleInput = overlay.querySelector('#ado-modal-title');
+    titleInput.focus();
+
+    overlay.querySelector('#ado-modal-submit').addEventListener('click', async () => {
+      const title = titleInput.value.trim();
+      if (!title) { titleInput.classList.add('ado-modal-input-error'); titleInput.focus(); return; }
+      titleInput.classList.remove('ado-modal-input-error');
+
+      const submitBtn = overlay.querySelector('#ado-modal-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating…';
+
+      try {
+        const resp = await fetch('/api/ado/work-items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type,
+            title,
+            description: overlay.querySelector('#ado-modal-desc').value.trim() || undefined,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+
+        close();
+        const skillCmd = isBug ? `create-bug` : `create-story`;
+        const DASH = window.DASH_CONFIG || {};
+        const wiUrl = DASH.adoOrg
+          ? `https://dev.azure.com/${DASH.adoOrg}/${encodeURIComponent(DASH.adoProject || '')}/_workitems/edit/${data.id}`
+          : null;
+        const msg = `${isBug ? '🐛' : '🚀'} ${type} #${data.id} created — run /${skillCmd} ${data.id} in Claude Code to create a branch`;
+        showToast(msg, 'success', 8000);
+
+        this._load(contentEl);
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `${isBug ? '&#128027;' : '&#128640;'} Create ${esc(type)}`;
+        showToast(`Failed to create ${type}: ${err.message}`, 'error');
+      }
+    });
   },
 
   refresh() {

@@ -1930,7 +1930,7 @@ app.get('/api/ado/work-items', async (req, res) => {
     if (ids.length === 0) return res.json([]);
 
     // Batch fetch in chunks of 200 (ADO limit)
-    const batchUrl = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/wit/workitems?ids=${ids.join(',')}&fields=System.Id,System.Title,System.State,System.WorkItemType,System.AssignedTo&api-version=7.1`;
+    const batchUrl = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/wit/workitems?ids=${ids.join(',')}&fields=System.Id,System.Title,System.State,System.WorkItemType,System.AssignedTo,System.CreatedDate&api-version=7.1`;
     const batchData = await adoFetch(batchUrl);
 
     const items = (batchData.value || []).map(wi => ({
@@ -1939,6 +1939,7 @@ app.get('/api/ado/work-items', async (req, res) => {
       state: wi.fields['System.State'],
       type: wi.fields['System.WorkItemType'],
       assignedTo: wi.fields['System.AssignedTo']?.displayName || '',
+      createdDate: wi.fields['System.CreatedDate'] || null,
     }));
 
     res.json(items);
@@ -1979,6 +1980,49 @@ app.patch('/api/ado/work-items/:id', async (req, res) => {
       id: updated.id,
       state: updated.fields['System.State'],
       title: updated.fields['System.Title'],
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/ado/work-items', async (req, res) => {
+  if (!isAdoConfigured()) return res.status(404).json({ error: 'ADO not configured' });
+  try {
+    const { type, title, description } = req.body;
+    if (!type || !title) return res.status(400).json({ error: 'type and title are required' });
+    const allowedTypes = ['Bug', 'User Story', 'Feature', 'Task'];
+    if (!allowedTypes.includes(type)) return res.status(400).json({ error: `type must be one of: ${allowedTypes.join(', ')}` });
+
+    const url = `${ADO_BASE_URL}/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_apis/wit/workitems/$${encodeURIComponent(type)}?api-version=7.1`;
+    const patchBody = [
+      { op: 'add', path: '/fields/System.Title', value: title },
+      { op: 'add', path: '/fields/System.State', value: 'Active' },
+    ];
+    if (description) {
+      const field = type === 'Bug' ? '/fields/Microsoft.VSTS.TCM.ReproSteps' : '/fields/System.Description';
+      patchBody.push({ op: 'add', path: field, value: description });
+    }
+
+    const createRes = await fetch(url, {
+      method: 'POST',
+      headers: { ...adoHeaders(), 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(patchBody),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!createRes.ok) {
+      const errBody = await createRes.text();
+      let msg = `ADO ${createRes.status}`;
+      try { const p = JSON.parse(errBody); msg = p.customProperties?.ErrorMessage || p.message || msg; } catch {}
+      throw new Error(msg);
+    }
+    const created = await createRes.json();
+    res.json({
+      id: created.id,
+      title: created.fields['System.Title'],
+      type: created.fields['System.WorkItemType'],
+      state: created.fields['System.State'],
+      url: created._links?.html?.href || `https://dev.azure.com/${getAdoOrg()}/${encodeURIComponent(getAdoProject())}/_workitems/edit/${created.id}`,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

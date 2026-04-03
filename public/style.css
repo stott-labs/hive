@@ -1881,6 +1881,123 @@ a.af-row:hover .af-text { text-decoration: underline; }
   margin-left: auto;
 }
 
+/* Search + create row */
+.ado-search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--surface0);
+}
+.ado-search-input {
+  flex: 1;
+  background: var(--surface0);
+  border: 1px solid var(--surface1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  padding: 4px 8px;
+  outline: none;
+}
+.ado-search-input:focus { border-color: var(--blue); }
+.ado-search-input::placeholder { color: var(--overlay0); }
+.ado-create-btn {
+  background: var(--surface0);
+  border: 1px solid var(--surface1);
+  border-radius: 4px;
+  color: var(--subtext0);
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.ado-create-btn:hover { background: var(--surface1); color: var(--text); }
+.ado-create-bug:hover { border-color: var(--red); color: var(--red); }
+.ado-create-story:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Create work item modal */
+.ado-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.ado-modal {
+  background: var(--mantle);
+  border: 1px solid var(--surface1);
+  border-radius: 8px;
+  width: 420px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.ado-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--surface0);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ado-modal-close {
+  background: none;
+  border: none;
+  color: var(--overlay0);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.ado-modal-close:hover { background: var(--surface1); color: var(--text); }
+.ado-modal-body { padding: 14px 16px; }
+.ado-modal-label {
+  display: block;
+  font-size: 11px;
+  color: var(--subtext0);
+  margin-bottom: 4px;
+}
+.ado-modal-required { color: var(--red); }
+.ado-modal-optional { color: var(--overlay0); }
+.ado-modal-input, .ado-modal-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface0);
+  border: 1px solid var(--surface1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 7px 10px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+.ado-modal-input:focus, .ado-modal-textarea:focus { border-color: var(--blue); }
+.ado-modal-input-error { border-color: var(--red) !important; }
+.ado-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--surface0);
+}
+.ado-modal-btn {
+  border: 1px solid var(--surface1);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 14px;
+}
+.ado-modal-cancel { background: var(--surface0); color: var(--subtext0); }
+.ado-modal-cancel:hover { background: var(--surface1); color: var(--text); }
+.ado-modal-submit { background: var(--blue); border-color: var(--blue); color: var(--base); font-weight: 600; }
+.ado-modal-submit:hover:not(:disabled) { opacity: 0.85; }
+.ado-modal-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .ado-filter-chip {
   padding: 4px 12px;
   border: 1px solid var(--surface1);

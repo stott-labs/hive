@@ -6548,6 +6548,29 @@ details.settings-section[open] > .settings-section-header::before {
   border-color: var(--red);
 }
 
+.settings-row-vis {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--overlay0);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 16px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.settings-row-vis:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.settings-row-vis--hidden {
+  color: var(--yellow);
+}
+.settings-row-is-hidden .settings-input {
+  opacity: 0.45;
+}
+
 .settings-row-add,
 .settings-row-add-keyed {
   margin-top: 8px;

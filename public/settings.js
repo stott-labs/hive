@@ -292,6 +292,13 @@ function renderSettings(container) {
   container.innerHTML = html;
   _settingsContainer = container;
   wireSettingsEvents(container);
+  if (_settingsDirty) {
+    const saveBtn = container.querySelector('#settings-save-btn');
+    const statusEl = container.querySelector('#settings-status');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save All Changes *'; }
+    if (statusEl) { statusEl.textContent = 'Unsaved changes'; statusEl.className = 'settings-status dirty'; }
+  }
+  initRepoVisibility(container);
 }
 
 function renderSectionBody(section) {
@@ -384,6 +391,9 @@ function renderSectionBody(section) {
       const display = Array.isArray(item) ? item.join(', ') : String(item);
       html += `<div class="settings-list-row">`;
       html += `<input type="text" class="settings-input settings-list-item" data-index="${i}" value="${_esc(display)}">`;
+      if (section.configKey === 'repos') {
+        html += `<button class="btn settings-row-vis" data-repo="${_esc(display)}" title="Toggle visibility">\uD83D\uDC41</button>`;
+      }
       html += `<button class="btn settings-row-remove" data-index="${i}" title="Remove">\u2715</button>`;
       html += `</div>`;
     }
@@ -708,6 +718,15 @@ function wireSettingsEvents(container) {
       _settingsConfig[configKey].splice(idx, 1);
       markDirty();
       renderSettings(container);
+    });
+  });
+
+  // String list repo visibility toggle
+  container.querySelectorAll('.settings-string-list .settings-row-vis').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const name = btn.dataset.repo;
+      if (typeof toggleHiddenRepo === 'function') await toggleHiddenRepo(name);
+      initRepoVisibility(container);
     });
   });
 
@@ -1157,6 +1176,24 @@ function wireRepoDiscovery(container, markDirty) {
 }
 
 // ---------------------------------------------------------------------------
+// Repo visibility toggle state — updates eye buttons in the Repositories list
+// ---------------------------------------------------------------------------
+async function initRepoVisibility(container) {
+  let hidden = new Set();
+  try {
+    const res = await fetch('/api/user-prefs');
+    if (res.ok) { const d = await res.json(); hidden = new Set(d.hiddenRepos || []); }
+  } catch { /* use empty set */ }
+  container.querySelectorAll('.settings-row-vis').forEach(btn => {
+    const isHidden = hidden.has(btn.dataset.repo);
+    btn.title = isHidden ? 'Hidden — click to show' : 'Visible — click to hide';
+    btn.textContent = isHidden ? '\uD83D\uDEAB' : '\uD83D\uDC41';
+    btn.classList.toggle('settings-row-vis--hidden', isHidden);
+    const row = btn.closest('.settings-list-row');
+    if (row) row.classList.toggle('settings-row-is-hidden', isHidden);
+  });
+}
+
 // Visibility section — per-user, stored in ~/.montra/dashboard-user-prefs.json
 // ---------------------------------------------------------------------------
 async function renderVisibilitySection(container) {

@@ -3362,28 +3362,36 @@ app.get('/api/sentry/issue/:id', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// User preferences — per-user, stored in ~/.montra/dashboard-user-prefs.json
+// User preferences — per-user, stored in the private data directory
 // (not in dashboard.config.json which is shared across the team)
 // ---------------------------------------------------------------------------
-const USER_PREFS_PATH = join(homedir(), '.montra', 'dashboard-user-prefs.json');
+const USER_PREFS_LEGACY_PATH = join(homedir(), '.montra', 'dashboard-user-prefs.json');
+function getUserPrefsPath() { return join(getPrivateDataDir(), 'user-prefs.json'); }
+
+function readUserPrefs() {
+  const path = getUserPrefsPath();
+  if (existsSync(path)) return JSON.parse(readFileSync(path, 'utf-8'));
+  // Migrate from legacy location on first access
+  if (existsSync(USER_PREFS_LEGACY_PATH)) {
+    const data = JSON.parse(readFileSync(USER_PREFS_LEGACY_PATH, 'utf-8'));
+    const dir = dirname(path);
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    writeFileSync(path, JSON.stringify(data, null, 2));
+    return data;
+  }
+  return {};
+}
 
 app.get('/api/user-prefs', (_req, res) => {
-  try {
-    if (existsSync(USER_PREFS_PATH)) {
-      res.json(JSON.parse(readFileSync(USER_PREFS_PATH, 'utf-8')));
-    } else {
-      res.json({});
-    }
-  } catch {
-    res.json({});
-  }
+  try { res.json(readUserPrefs()); } catch { res.json({}); }
 });
 
 app.put('/api/user-prefs', (req, res) => {
   try {
-    const dir = dirname(USER_PREFS_PATH);
+    const path = getUserPrefsPath();
+    const dir = dirname(path);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    writeFileSync(USER_PREFS_PATH, JSON.stringify(req.body, null, 2));
+    writeFileSync(path, JSON.stringify(req.body, null, 2));
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

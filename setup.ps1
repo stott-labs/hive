@@ -404,7 +404,7 @@ $ConfigContent = @"
   "github": $GithubJson
 }
 "@
-[System.IO.File]::WriteAllText($ConfigFile, $ConfigContent, [System.Text.Encoding]::new(65001, $false, $false))
+[System.IO.File]::WriteAllText($ConfigFile, $ConfigContent, [System.Text.UTF8Encoding]::new($false))
 Write-Success "Created dashboard.config.json"
 
 # --- data/databases.json ---
@@ -414,7 +414,7 @@ if (-not (Test-Path $DataDir)) { New-Item -ItemType Directory -Path $DataDir | O
 if ($DbEntries.Count -gt 0) {
     $DbJson = $DbEntries | ConvertTo-Json -Depth 5
     if ($DbEntries.Count -eq 1) { $DbJson = "[$DbJson]" }
-    [System.IO.File]::WriteAllText($DatabasesFile, $DbJson, [System.Text.Encoding]::new(65001, $false, $false))
+    [System.IO.File]::WriteAllText($DatabasesFile, $DbJson, [System.Text.UTF8Encoding]::new($false))
     Write-Success "Created data/databases.json ($($DbEntries.Count) connection(s))"
 } else {
     Set-Content -Path $DatabasesFile -Value '[]' -Encoding UTF8
@@ -429,7 +429,7 @@ if (-not [string]::IsNullOrWhiteSpace($WebRepoDir)) {
 Set-Location $(ConvertTo-JsonString "$ProjectsDir\$WebRepoDir")
 $WebStartCmd
 "@
-    [System.IO.File]::WriteAllText($WebScriptPath, $WebScriptContent, [System.Text.Encoding]::new(65001, $false, $false))
+    [System.IO.File]::WriteAllText($WebScriptPath, $WebScriptContent, [System.Text.UTF8Encoding]::new($false))
     Write-Success "Created run-web.ps1"
 }
 
@@ -441,7 +441,7 @@ if (-not [string]::IsNullOrWhiteSpace($ApiRepoDir)) {
 Set-Location $(ConvertTo-JsonString "$ProjectsDir\$ApiRepoDir")
 $ApiStartCmd
 "@
-    [System.IO.File]::WriteAllText($ApiScriptPath, $ApiScriptContent, [System.Text.Encoding]::new(65001, $false, $false))
+    [System.IO.File]::WriteAllText($ApiScriptPath, $ApiScriptContent, [System.Text.UTF8Encoding]::new($false))
     Write-Success "Created run-api.ps1"
 }
 
@@ -508,12 +508,12 @@ docs_dir: ${DocsDir}
 docs_bugs_path: ${DocsBugsPath}
 "@
 
-[System.IO.File]::WriteAllText($SharedConfigFile, $SharedContent, [System.Text.Encoding]::new(65001, $false, $false))
+[System.IO.File]::WriteAllText($SharedConfigFile, $SharedContent, [System.Text.UTF8Encoding]::new($false))
 Write-Success "Created $SharedConfigFile"
 
 # --- paths.env ---
 $PathsContent = "HIVE_DIR=`"$ScriptDir`"`nPROJECTS_DIR=`"$ProjectsDir`""
-[System.IO.File]::WriteAllText($PathsEnvFile, $PathsContent, [System.Text.Encoding]::new(65001, $false, $false))
+[System.IO.File]::WriteAllText($PathsEnvFile, $PathsContent, [System.Text.UTF8Encoding]::new($false))
 Write-Success "Created $PathsEnvFile"
 
 # ---------------------------------------------------------------------------

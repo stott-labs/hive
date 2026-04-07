@@ -3138,6 +3138,8 @@ a.af-row:hover .af-text { text-decoration: underline; }
   flex-shrink: 0;
 }
 .tree-share-btn:hover { background: var(--surface1); }
+.tree-item.docs-changed > span:not(.tree-icon):not(.tree-share-btn) { color: var(--peach); }
+.docs-changed-badge { color: var(--peach); margin-left: 4px; font-size: 16px; line-height: 1; vertical-align: middle; }
 .tree-item.dir::before { content: ''; }
 .tree-item.dir.expanded::before { content: ''; }
 

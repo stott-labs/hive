@@ -160,6 +160,11 @@ function renderDocsTreeNodes(nodes, parent, depth) {
     const item = document.createElement('div');
     item.style.paddingLeft = (12 + depth * 16) + 'px';
 
+    // Check if this node or any descendant has uncommitted changes
+    const isChanged = node.type === 'file' && docsChangedPaths.has(node.path);
+    const dirHasChanges = node.type === 'dir' && docsChangedPaths.size > 0 &&
+      [...docsChangedPaths].some(p => p.startsWith(node.path + '/'));
+
     if (node.type === 'dir') {
       item.className = 'tree-item dir' + (expandedDirs.has(node.path) ? ' expanded' : '');
 
@@ -173,6 +178,14 @@ function renderDocsTreeNodes(nodes, parent, depth) {
 
       const label = document.createElement('span');
       label.textContent = node.name;
+
+      if (dirHasChanges) {
+        const badge = document.createElement('span');
+        badge.className = 'docs-changed-badge';
+        badge.textContent = '\u2022';
+        badge.title = 'Contains uncommitted changes';
+        label.appendChild(badge);
+      }
 
       item.appendChild(toggle);
       item.appendChild(icon);
@@ -204,6 +217,10 @@ function renderDocsTreeNodes(nodes, parent, depth) {
 
       const label = document.createElement('span');
       label.textContent = node.name.replace(/\.md$/, '');
+      if (isChanged) {
+        item.classList.add('docs-changed');
+        label.title = 'Uncommitted changes';
+      }
 
       const shareBtn = document.createElement('span');
       shareBtn.className = 'tree-share-btn';
@@ -749,17 +766,22 @@ async function doDocsPush() {
   }
 }
 
+let docsChangedPaths = new Set();
+
 async function refreshDocsGitStatus() {
   const statusEl = document.getElementById('docs-git-status');
   if (!statusEl) return;
   try {
     const res = await fetch('/api/docs/git/status');
     const data = await res.json();
-    if (!res.ok) { statusEl.textContent = ''; return; }
+    if (!res.ok) { statusEl.textContent = ''; docsChangedPaths.clear(); return; }
     statusEl.textContent = data.dirty ? `${data.files} changed` : 'clean';
     statusEl.style.color = data.dirty ? 'var(--peach)' : 'var(--green)';
+    docsChangedPaths = new Set(data.changedPaths || []);
+    if (docsTree.length) renderTree(docsTree);
   } catch {
     statusEl.textContent = '';
+    docsChangedPaths.clear();
   }
 }
 

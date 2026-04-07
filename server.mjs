@@ -3706,7 +3706,12 @@ app.get('/api/docs/git/status', (_req, res) => {
   try {
     const status = execSync('git status --porcelain', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
     const branch = execSync('git branch --show-current', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
-    res.json({ branch, dirty: status.length > 0, files: status ? status.split('\n').length : 0 });
+    // Parse changed file paths (porcelain format: "XY path" or "XY path -> newpath")
+    const changedPaths = status ? status.split('\n').map(line => {
+      const file = line.slice(3).split(' -> ').pop().trim();
+      return file;
+    }) : [];
+    res.json({ branch, dirty: status.length > 0, files: changedPaths.length, changedPaths });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -4669,6 +4674,100 @@ app.get('/api/swagger', async (_req, res) => {
 // ---------------------------------------------------------------------------
 // Database Explorer — multi-connection pool map + routes
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// SQLite demo adapter — wraps sql.js to match pg.Pool query interface
+// ---------------------------------------------------------------------------
+let _sqliteDb = null;
+async function getSqliteDemo() {
+  if (_sqliteDb) return _sqliteDb;
+  const initSqlJs = (await import('sql.js')).default;
+  const SQL = await initSqlJs();
+  const db = new SQL.Database();
+  // Seed demo tables
+  db.run(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE,
+      plan TEXT DEFAULT 'free',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL REFERENCES customers(id),
+      product TEXT NOT NULL,
+      amount REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      ordered_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT,
+      price REAL NOT NULL,
+      in_stock INTEGER DEFAULT 1
+    );
+    CREATE VIEW IF NOT EXISTS order_summary AS
+      SELECT c.name AS customer, o.product, o.amount, o.status
+      FROM orders o JOIN customers c ON c.id = o.customer_id;
+
+    INSERT OR IGNORE INTO customers (id, name, email, plan) VALUES
+      (1, 'Alice Chen', 'alice@example.com', 'pro'),
+      (2, 'Bob Rivera', 'bob@example.com', 'free'),
+      (3, 'Carol Patel', 'carol@example.com', 'enterprise'),
+      (4, 'Dave Okafor', 'dave@example.com', 'pro'),
+      (5, 'Eva Santos', 'eva@example.com', 'free');
+
+    INSERT OR IGNORE INTO products (id, name, category, price) VALUES
+      (1, 'Dashboard Pro', 'software', 49.99),
+      (2, 'API Access', 'service', 29.99),
+      (3, 'Support Plan', 'service', 19.99),
+      (4, 'Data Export', 'addon', 9.99),
+      (5, 'Custom Theme', 'addon', 4.99);
+
+    INSERT OR IGNORE INTO orders (id, customer_id, product, amount, status) VALUES
+      (1, 1, 'Dashboard Pro', 49.99, 'completed'),
+      (2, 1, 'API Access', 29.99, 'completed'),
+      (3, 2, 'Support Plan', 19.99, 'pending'),
+      (4, 3, 'Dashboard Pro', 49.99, 'completed'),
+      (5, 3, 'API Access', 29.99, 'completed'),
+      (6, 3, 'Data Export', 9.99, 'completed'),
+      (7, 4, 'Custom Theme', 4.99, 'completed'),
+      (8, 5, 'Dashboard Pro', 49.99, 'pending'),
+      (9, 2, 'API Access', 29.99, 'refunded'),
+      (10, 4, 'Support Plan', 19.99, 'completed');
+  `);
+  _sqliteDb = db;
+  return db;
+}
+
+/** Wrap sql.js result to match pg.Pool.query() shape */
+function sqliteQuery(db, sql) {
+  const upper = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').trim().toUpperCase();
+  const isSelect = upper.startsWith('SELECT') || upper.startsWith('PRAGMA') || upper.startsWith('WITH');
+  if (isSelect) {
+    const stmt = db.prepare(sql);
+    const columns = stmt.getColumnNames();
+    const rows = [];
+    while (stmt.step()) {
+      const values = stmt.get();
+      const row = {};
+      columns.forEach((col, i) => { row[col] = values[i]; });
+      rows.push(row);
+    }
+    stmt.free();
+    return { fields: columns.map(name => ({ name })), rows, rowCount: rows.length, command: 'SELECT' };
+  } else {
+    db.run(sql);
+    const changes = db.getRowsModified();
+    const cmd = upper.split(/\s/)[0];
+    return { fields: [], rows: [], rowCount: changes, command: cmd };
+  }
+}
+
+function isSqliteConnection(conn) { return conn && conn.driver === 'sqlite'; }
+
 function discoverDbConnections() {
   const connections = [];
   const palette = ['#a6e3a1','#89b4fa','#fab387','#cba6f7','#f9e2af','#94e2d5','#f38ba8'];
@@ -4712,15 +4811,15 @@ function discoverDbConnections() {
     });
   }
 
-  // Fallback if no env vars found
+  // 3. Fallback: embedded SQLite demo (zero-config)
   if (connections.length === 0) {
     connections.push({
-      id: 'env-default', name: 'Local Dev',
-      host: 'localhost', port: 5432, user: 'postgres',
-      password: '', database: 'postgres', ssl: false,
-      color: palette[0], envPrefix: 'DB',
+      id: 'demo-sqlite', name: 'Demo (SQLite)',
+      host: 'embedded', port: 0, user: '', password: '', database: ':memory:',
+      ssl: false, color: palette[0], driver: 'sqlite',
     });
   }
+
   return connections;
 }
 
@@ -4732,6 +4831,9 @@ function getDbPool(connectionId) {
     ? connections.find(c => c.id === connectionId)
     : connections[0];
   if (!conn) throw new Error('Connection not found');
+
+  // SQLite connections don't use pg.Pool
+  if (isSqliteConnection(conn)) return null;
 
   if (dbPools.has(conn.id)) return dbPools.get(conn.id);
 
@@ -4748,6 +4850,11 @@ function getDbPool(connectionId) {
   });
   dbPools.set(conn.id, pool);
   return pool;
+}
+
+function getConnectionById(connectionId) {
+  const connections = discoverDbConnections();
+  return connectionId ? connections.find(c => c.id === connectionId) : connections[0];
 }
 
 function isQuerySafe(sql, allowWrite) {
@@ -4767,11 +4874,17 @@ app.get('/api/db/connections', (_req, res) => {
 // POST /api/db/connections/test — test a connection
 app.post('/api/db/connections/test', async (req, res) => {
   let { host, port, user, password, database, ssl, connectionId } = req.body;
-  // Resolve masked password from env
-  if (password === '••••••' && connectionId) {
-    const conn = discoverDbConnections().find(c => c.id === connectionId);
-    if (conn) password = conn.password;
+  const conn = connectionId ? discoverDbConnections().find(c => c.id === connectionId) : null;
+  if (conn && isSqliteConnection(conn)) {
+    try {
+      const db = await getSqliteDemo();
+      const r = sqliteQuery(db, 'SELECT sqlite_version() AS version');
+      res.json({ ok: true, version: `SQLite ${r.rows[0].version}` });
+    } catch (err) { res.json({ ok: false, error: err.message }); }
+    return;
   }
+  // Resolve masked password from env
+  if (password === '••••••' && conn) password = conn.password;
   const testPool = new pg.Pool({
     host, port, user, password, database,
     ssl: ssl ? { rejectUnauthorized: false } : false,
@@ -4791,11 +4904,13 @@ app.post('/api/db/connections/test', async (req, res) => {
 // GET /api/db/status — ping DB, return connection info
 app.get('/api/db/status', async (req, res) => {
   try {
+    const conn = getConnectionById(req.query.connectionId);
+    if (isSqliteConnection(conn)) {
+      const db = await getSqliteDemo();
+      const r = sqliteQuery(db, 'SELECT sqlite_version() AS version');
+      return res.json({ connected: true, database: 'Demo (SQLite)', host: 'embedded', version: `SQLite ${r.rows[0].version}` });
+    }
     const pool = getDbPool(req.query.connectionId);
-    const connections = discoverDbConnections();
-    const conn = req.query.connectionId
-      ? connections.find(c => c.id === req.query.connectionId)
-      : connections[0];
     const result = await pool.query('SELECT version()');
     res.json({
       connected: true,
@@ -4811,6 +4926,48 @@ app.get('/api/db/status', async (req, res) => {
 // GET /api/db/schema — full schema tree (tables, views, mat views, columns, PKs, FKs)
 app.get('/api/db/schema', async (req, res) => {
   try {
+    const conn = getConnectionById(req.query.connectionId);
+
+    // ── SQLite path ──
+    if (isSqliteConnection(conn)) {
+      const db = await getSqliteDemo();
+      const schema = 'main';
+      const schemas = { [schema]: { tables: [], views: [] } };
+
+      // Tables
+      const tables = sqliteQuery(db, "SELECT name, type FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+      for (const t of tables.rows) {
+        const cols = sqliteQuery(db, `PRAGMA table_info("${t.name}")`);
+        const fks = sqliteQuery(db, `PRAGMA foreign_key_list("${t.name}")`);
+        const fkMap = {};
+        for (const fk of fks.rows) fkMap[fk.from] = { refSchema: schema, refTable: fk.table, refColumn: fk.to };
+
+        schemas[schema].tables.push({
+          name: t.name, type: 'table',
+          columns: cols.rows.map(c => ({
+            name: c.name, type: c.type || 'TEXT', nullable: !c.notnull,
+            default: c.dflt_value, maxLength: null, isPk: c.pk > 0, fk: fkMap[c.name] || null,
+          })),
+        });
+      }
+
+      // Views
+      const views = sqliteQuery(db, "SELECT name FROM sqlite_master WHERE type='view' ORDER BY name");
+      for (const v of views.rows) {
+        const cols = sqliteQuery(db, `PRAGMA table_info("${v.name}")`);
+        schemas[schema].views.push({
+          name: v.name, type: 'view',
+          columns: cols.rows.map(c => ({
+            name: c.name, type: c.type || 'TEXT', nullable: !c.notnull,
+            default: c.dflt_value, maxLength: null, isPk: false, fk: null,
+          })),
+        });
+      }
+
+      return res.json(schemas);
+    }
+
+    // ── PostgreSQL path ──
     const pool = getDbPool(req.query.connectionId);
 
     // Tables and views
@@ -4929,8 +5086,23 @@ app.post('/api/db/query', async (req, res) => {
       return res.status(403).json({ error: 'Write operations blocked. Enable Write Mode to execute INSERT/UPDATE/DELETE/DDL.' });
     }
 
-    const pool = getDbPool(req.query.connectionId);
+    const conn = getConnectionById(req.query.connectionId);
     const start = Date.now();
+
+    if (isSqliteConnection(conn)) {
+      const db = await getSqliteDemo();
+      const result = sqliteQuery(db, sql);
+      const time = Date.now() - start;
+      return res.json({
+        columns: result.fields.map(f => f.name),
+        rows: result.rows,
+        rowCount: result.rowCount,
+        time,
+        command: result.command,
+      });
+    }
+
+    const pool = getDbPool(req.query.connectionId);
     const result = await pool.query(sql);
     const time = Date.now() - start;
 
@@ -4950,6 +5122,28 @@ app.post('/api/db/query', async (req, res) => {
 app.get('/api/db/table/:schema/:table', async (req, res) => {
   try {
     const { schema, table } = req.params;
+    const conn = getConnectionById(req.query.connectionId);
+
+    if (isSqliteConnection(conn)) {
+      const db = await getSqliteDemo();
+      const cols = sqliteQuery(db, `PRAGMA table_info("${table}")`);
+      const countR = sqliteQuery(db, `SELECT count(*) AS count FROM "${table}"`);
+      const idxList = sqliteQuery(db, `PRAGMA index_list("${table}")`);
+      const indexes = idxList.rows.map(idx => ({
+        indexname: idx.name,
+        indexdef: `${idx.unique ? 'UNIQUE ' : ''}INDEX ${idx.name}`,
+      }));
+      return res.json({
+        columns: cols.rows.map(c => ({
+          column_name: c.name, data_type: c.type || 'TEXT',
+          is_nullable: c.notnull ? 'NO' : 'YES', column_default: c.dflt_value,
+          character_maximum_length: null, numeric_precision: null,
+        })),
+        rowCount: countR.rows[0]?.count,
+        indexes,
+      });
+    }
+
     const pool = getDbPool(req.query.connectionId);
 
     const [columnsR, countR, indexesR] = await Promise.all([
@@ -5190,8 +5384,22 @@ app.post('/api/metrics/preview', express.json(), async (req, res) => {
     return res.status(403).json({ error: 'Only SELECT queries are allowed in metrics.' });
   }
   try {
-    const pool = getDbPool(connectionId);
+    const conn = getConnectionById(connectionId);
     const start = Date.now();
+
+    if (isSqliteConnection(conn)) {
+      const db = await getSqliteDemo();
+      const result = sqliteQuery(db, sql);
+      const time = Date.now() - start;
+      return res.json({
+        columns: result.fields.map(f => f.name),
+        rows: result.rows.slice(0, 20),
+        rowCount: result.rowCount,
+        time,
+      });
+    }
+
+    const pool = getDbPool(connectionId);
     const raw = await pool.query(sql);
     const time = Date.now() - start;
     // pg returns an array of Results when the SQL contains multiple statements;
@@ -5248,8 +5456,22 @@ app.post('/api/metrics/:id/query', async (req, res) => {
     return res.status(403).json({ error: 'Only SELECT queries are allowed in metrics.' });
   }
   try {
-    const pool = getDbPool(metric.connectionId);
+    const conn = getConnectionById(metric.connectionId);
     const start = Date.now();
+
+    if (isSqliteConnection(conn)) {
+      const db = await getSqliteDemo();
+      const result = sqliteQuery(db, sql);
+      const time = Date.now() - start;
+      return res.json({
+        columns: result.fields.map(f => f.name),
+        rows: result.rows,
+        rowCount: result.rowCount,
+        time,
+      });
+    }
+
+    const pool = getDbPool(metric.connectionId);
     const result = await pool.query(sql);
     const time = Date.now() - start;
     res.json({

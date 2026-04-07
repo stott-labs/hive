@@ -768,9 +768,8 @@ function writeJsonFile(filename, data, dir = getDataDir()) {
 }
 
 const DEFAULT_ENVIRONMENTS = [
-  { name: 'Local', variables: [
-    { key: 'baseUrl', value: 'http://localhost:3000', enabled: true },
-    { key: 'apiKey', value: '', enabled: false },
+  { name: 'Demo', variables: [
+    { key: 'baseUrl', value: 'https://httpbin.org', enabled: true },
   ]},
 ];
 

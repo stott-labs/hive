@@ -16,3 +16,4 @@ This directory captures the context behind significant implementation efforts â€
 | [[implemenations/layout-persistence\|Layout Persistence & First-Run Seeding]] | Migration from localStorage to server-side layouts | 2026-03 |
 | [[implemenations/database-discovery\|Database Connection Discovery]] | Environment-variable-driven connection detection with SQLite fallback | 2026-02 |
 | [[implemenations/docs-git-integration\|Docs Git Integration]] | How the docs viewer handles git status in nested repositories | 2026-03 |
+| [[implemenations/wiki-link-requirement\|Wiki-Link Requirement]] | Why standard markdown links 404 and wiki-links are required | 2026-04 |

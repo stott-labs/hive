@@ -95,6 +95,32 @@ Link to other documents in the vault:
 
 Clicking a wiki-link opens the target document in a new tab. Links are rendered in the theme's mauve color.
 
+> [!warning] Always use wiki-links, not standard markdown links
+> Standard markdown links like `[text](path.md)` will **not work** in the docs viewer. Marked.js renders them as plain `<a href="path.md">` tags, and the browser resolves the href relative to the page URL (`localhost:3333/`), resulting in a 404.
+>
+> Wiki-links are pre-processed before markdown rendering. They become `<a class="wiki-link" data-doc-path="...">` elements with a click handler that routes through the docs API. This is the only link syntax that navigates within the docs viewer.
+
+### How Wiki-Link Resolution Works
+
+The resolver handles two cases depending on whether the link contains a path separator:
+
+**With a path** — `[[hive/configuration]]` or `[[guides/creating-metrics|Create metrics]]`
+
+Treated as an explicit path from the docs root. The `.md` extension is added automatically if missing. The link opens `hive/configuration.md` directly.
+
+**Filename only** — `[[DocumentName]]`
+
+Searches the entire docs tree for a file whose name matches `DocumentName.md`. This is the Obsidian-style "just link by name" behavior. If the file exists anywhere in the vault, it will be found regardless of which directory it's in. If multiple files share the same name, the first match wins.
+
+### Quick Reference
+
+| Syntax | Result |
+|--------|--------|
+| `[[getting-started]]` | Finds `getting-started.md` anywhere in vault |
+| `[[hive/overview]]` | Opens `hive/overview.md` (explicit path) |
+| `[[hive/overview\|HIVE docs]]` | Opens `hive/overview.md`, displays "HIVE docs" |
+| `[HIVE docs](hive/overview.md)` | **Broken** — renders as a raw browser link (404) |
+
 ### Image Embeds
 
 ```markdown

@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide walks through installing all three projects. Each is independent — you can install just HIVE, or just Hivemind — but they're designed to work together.
+This guide walks through installing all three projects. Each is independent — you can install just HIVE, or just Hivemind — but they're designed to work together. Anything I do here,
 
 ## Prerequisites
 

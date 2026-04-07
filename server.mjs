@@ -3705,7 +3705,9 @@ app.get('/api/docs/git/status', (_req, res) => {
   const docsDir = getDocsDir();
   if (!existsSync(docsDir)) return res.status(404).json({ error: 'docs directory not found' });
   try {
-    const status = execSync('git status --porcelain', { cwd: docsDir, timeout: 5000, encoding: 'utf-8' }).trim();
+    // trimEnd only — trim() would strip the leading space from the first line's
+    // XY status columns (e.g. " M path"), corrupting line.slice(3) parsing.
+    const status = execSync('git status --porcelain', { cwd: docsDir, timeout: 5000, encoding: 'utf-8' }).trimEnd();
     const branch = execSync('git branch --show-current', { cwd: docsDir, timeout: 5000, encoding: 'utf-8' }).trim();
     // Git porcelain paths are relative to the repo root, but the docs tree
     // uses paths relative to the docs directory.  Compute the prefix to strip.

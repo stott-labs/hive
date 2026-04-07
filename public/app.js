@@ -2132,6 +2132,11 @@ function getFullDefault() {
   }
 
   suppressSave = false;
+
+  // Persist the default layout on first run so it survives reloads
+  if (!savedLayout || savedLayout.length === 0) {
+    saveLayout();
+  }
   updateWidgetPicker();
   refreshLayoutSelect();
 

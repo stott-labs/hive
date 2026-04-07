@@ -28,6 +28,8 @@ async function isReachable(url, timeoutMs = 3000) {
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
+    // Drain the response body so the underlying socket is released cleanly
+    await res.arrayBuffer();
     return res.ok;
   } catch {
     return false;
@@ -137,7 +139,7 @@ async function main() {
       if (Array.isArray(dbs) && dbs.length > 0) {
         pass(`Database connections configured: ${dbs.length}`);
       } else {
-        warn('No database connections configured (SQL metric widgets will be disabled)');
+        pass('No database connections configured — embedded SQLite demo will be used');
       }
     } catch {
       warn('data/databases.json is not valid JSON');
@@ -177,7 +179,9 @@ async function main() {
   if (failCount > 0) parts.push(`\x1b[31m${failCount} failed\x1b[0m`);
   console.log(`  ${parts.join(', ')}\n`);
 
-  process.exit(failCount > 0 ? 1 : 0);
+  // Use exitCode instead of process.exit() to let Node drain pending handles
+  // cleanly (avoids UV_HANDLE_CLOSING assertion on Windows)
+  process.exitCode = failCount > 0 ? 1 : 0;
 }
 
 main();

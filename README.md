@@ -9,6 +9,11 @@
 
 ## TL;DR — Install Order
 
+>[!TIP] 
+>**Just want to kick the tires?** Use the [one-liner setup](#one-liner-setup) to clone H.I.V.E. and Drone and get up and running fast!
+
+**Typical Install**
+
 | Step | Repo | What it does |
 |------|------|---|
 | 1 | **H.I.V.E.** (this repo) | Clone → `./setup.sh` → configures your identity, provider, dashboard, and writes shared config |

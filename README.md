@@ -3,6 +3,8 @@
 
 > A self-hosted developer dashboard that lives in your browser and knows everything about your stack — git status, live logs, external service health, SQL metrics, API collections, and more. Zero cloud. Zero accounts. Just `npm start`.
 
+![H.I.V.E. Dashboard](img/hive-dashboard.png)
+
 ---
 
 ## TL;DR — Install Order

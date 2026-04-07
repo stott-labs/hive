@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-005: Shared vs Private Data Model
 
-**Date:** 2025-01  
+**Date:** 2026-02  
 **Status:** Accepted
 
 ## Context

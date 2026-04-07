@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-007: Server-Side Request Proxy
 
-**Date:** 2025-01  
+**Date:** 2026-03  
 **Status:** Accepted
 
 ## Context

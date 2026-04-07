@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-001: Vanilla JavaScript Architecture
 
-**Date:** 2024-12  
+**Date:** 2026-02  
 **Status:** Accepted
 
 ## Context

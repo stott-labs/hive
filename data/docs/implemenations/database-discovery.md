@@ -5,7 +5,7 @@ status: active
 
 # Database Connection Discovery
 
-**Date:** 2025-02  
+**Date:** 2026-02  
 **Related ADR:** [[decisions/004-json-file-storage]]
 
 ## Problem

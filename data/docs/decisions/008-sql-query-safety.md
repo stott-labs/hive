@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-008: SQL Query Safety Model
 
-**Date:** 2025-02  
+**Date:** 2026-03  
 **Status:** Accepted
 
 ## Context

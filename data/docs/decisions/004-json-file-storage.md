@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-004: JSON File Storage for Configuration and State
 
-**Date:** 2024-12  
+**Date:** 2026-02  
 **Status:** Accepted
 
 ## Context

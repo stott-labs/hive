@@ -11,8 +11,8 @@ This directory captures the context behind significant implementation efforts â€
 
 | Note | Topic | Date |
 |------|-------|------|
-| [[implemenations/setup-changes\|Setup Experience Review]] | Analysis and plan for simplifying the 3-repo setup experience | 2025-03 |
-| [[implemenations/setup-consolidation\|One-Line Setup Consolidation]] | How setup went from 10+ steps to one command | 2025-03 |
-| [[implemenations/layout-persistence\|Layout Persistence & First-Run Seeding]] | Migration from localStorage to server-side layouts | 2025-03 |
-| [[implemenations/database-discovery\|Database Connection Discovery]] | Environment-variable-driven connection detection with SQLite fallback | 2025-02 |
-| [[implemenations/docs-git-integration\|Docs Git Integration]] | How the docs viewer handles git status in nested repositories | 2025-03 |
+| [[implemenations/setup-changes\|Setup Experience Review]] | Analysis and plan for simplifying the 3-repo setup experience | 2026-02 |
+| [[implemenations/setup-consolidation\|One-Line Setup Consolidation]] | How setup went from 10+ steps to one command | 2026-03 |
+| [[implemenations/layout-persistence\|Layout Persistence & First-Run Seeding]] | Migration from localStorage to server-side layouts | 2026-03 |
+| [[implemenations/database-discovery\|Database Connection Discovery]] | Environment-variable-driven connection detection with SQLite fallback | 2026-02 |
+| [[implemenations/docs-git-integration\|Docs Git Integration]] | How the docs viewer handles git status in nested repositories | 2026-03 |

@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-003: Real-Time Log Streaming via File Watchers
 
-**Date:** 2024-12  
+**Date:** 2026-02  
 **Status:** Accepted
 
 ## Context

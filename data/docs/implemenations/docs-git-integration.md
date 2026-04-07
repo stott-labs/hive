@@ -5,7 +5,7 @@ status: active
 
 # Docs Git Integration
 
-**Date:** 2025-04  
+**Date:** 2026-03  
 **Related ADR:** [[decisions/004-json-file-storage]]
 
 ## Problem

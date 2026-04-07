@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-006: Two-Tier Git Polling
 
-**Date:** 2025-01  
+**Date:** 2026-02  
 **Status:** Accepted
 
 ## Context

@@ -5,7 +5,7 @@ status: active
 
 # Layout Persistence & First-Run Seeding
 
-**Date:** 2025-03  
+**Date:** 2026-03  
 **Related ADR:** [[decisions/009-named-layouts]]
 
 ## Problem

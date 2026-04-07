@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-009: Named Layouts with Tab System
 
-**Date:** 2025-03  
+**Date:** 2026-03  
 **Status:** Accepted
 
 ## Context

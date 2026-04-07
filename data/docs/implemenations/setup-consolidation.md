@@ -5,7 +5,7 @@ status: active
 
 # One-Line Setup Consolidation
 
-**Date:** 2025-03  
+**Date:** 2026-03  
 **Related ADR:** [[decisions/010-drone-demo-companion]]  
 **Related:** [[implemenations/setup-changes]] (original review)
 

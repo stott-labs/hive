@@ -5,7 +5,7 @@ status: Accepted
 
 # ADR-010: Drone Demo Companion
 
-**Date:** 2025-02  
+**Date:** 2026-03  
 **Status:** Accepted
 
 ## Context

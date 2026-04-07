@@ -2250,6 +2250,7 @@ async function loadCollections() {
     collections = await res.json();
   } catch { collections = []; }
   renderCollectionsTree();
+  updateUrlTooltip();
 }
 
 async function saveCollections() {
@@ -3536,6 +3537,7 @@ async function loadEnvironments() {
     environments = await res.json();
   } catch { environments = [{ name: 'Local', variables: [{ key: 'baseUrl', value: 'http://localhost:3000', enabled: true }] }]; }
   renderEnvSelector();
+  updateUrlTooltip();
 }
 
 async function saveEnvironments() {
@@ -3545,6 +3547,7 @@ async function saveEnvironments() {
     body: JSON.stringify(environments),
   });
   renderEnvSelector();
+  updateUrlTooltip();
 }
 
 function renderEnvSelector() {

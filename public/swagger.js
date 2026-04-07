@@ -56,6 +56,7 @@ function initSwagger() {
     if (!suppressUrlSync) syncUrlToParams();
     if (isDocsTabActive()) renderDocsPanel();
     markTabDirtyIfNeeded();
+    updateUrlTooltip();
   });
 
   document.getElementById('api-send').addEventListener('click', sendRequest);
@@ -127,6 +128,7 @@ function initSwagger() {
   // Environment selector
   document.getElementById('api-env-select').addEventListener('change', (e) => {
     activeEnvIndex = parseInt(e.target.value) || 0;
+    updateUrlTooltip();
   });
 
   // Save modal
@@ -252,6 +254,27 @@ function resolveVariables(text) {
   }
 
   return text.replace(/\{\{([\w.:-]+)\}\}/g, (match, key) => vars[key] !== undefined ? vars[key] : match);
+}
+
+function updateUrlTooltip() {
+  const urlInput = document.getElementById('api-url');
+  if (!urlInput) return;
+  const raw = urlInput.value || '';
+  if (/\{\{[\w.:-]+\}\}/.test(raw)) {
+    const resolved = resolveVariables(raw);
+    // Build a breakdown: show each variable → value
+    const lines = [resolved];
+    const seen = new Set();
+    raw.replace(/\{\{([\w.:-]+)\}\}/g, (_, key) => {
+      if (seen.has(key)) return;
+      seen.add(key);
+      const val = resolveVariables(`{{${key}}}`);
+      lines.push(`{{${key}}} = ${val === `{{${key}}}` ? '(undefined)' : val}`);
+    });
+    urlInput.title = lines.join('\n');
+  } else {
+    urlInput.title = '';
+  }
 }
 
 function isDocsTabActive() {
@@ -387,6 +410,7 @@ function loadTabState(tab) {
 
   renderCollectionsTree();
   updateSaveButton();
+  updateUrlTooltip();
 }
 
 function switchToTab(index) {

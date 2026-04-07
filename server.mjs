@@ -3702,15 +3702,28 @@ app.post('/api/docs/git/push', express.json(), (req, res) => {
 
 // Docs: git status
 app.get('/api/docs/git/status', (_req, res) => {
-  if (!existsSync(getDocsDir())) return res.status(404).json({ error: 'docs directory not found' });
+  const docsDir = getDocsDir();
+  if (!existsSync(docsDir)) return res.status(404).json({ error: 'docs directory not found' });
   try {
-    const status = execSync('git status --porcelain', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
-    const branch = execSync('git branch --show-current', { cwd: getDocsDir(), timeout: 5000, encoding: 'utf-8' }).trim();
+    const status = execSync('git status --porcelain', { cwd: docsDir, timeout: 5000, encoding: 'utf-8' }).trim();
+    const branch = execSync('git branch --show-current', { cwd: docsDir, timeout: 5000, encoding: 'utf-8' }).trim();
+    // Git porcelain paths are relative to the repo root, but the docs tree
+    // uses paths relative to the docs directory.  Compute the prefix to strip.
+    const repoRoot = execSync('git rev-parse --show-toplevel', { cwd: docsDir, timeout: 5000, encoding: 'utf-8' }).trim().replace(/\\/g, '/');
+    const docsDirNorm = docsDir.replace(/\\/g, '/');
+    const prefix = relative(repoRoot, docsDirNorm).replace(/\\/g, '/');
+    const prefixSlash = prefix ? prefix + '/' : '';
+
     // Parse changed file paths (porcelain format: "XY path" or "XY path -> newpath")
-    const changedPaths = status ? status.split('\n').map(line => {
+    // Strip the docs-dir prefix so paths match the tree, and filter out
+    // changes outside the docs directory.
+    const changedPaths = status ? status.split('\n').reduce((acc, line) => {
       const file = line.slice(3).split(' -> ').pop().trim();
-      return file;
-    }) : [];
+      if (!prefixSlash || file.startsWith(prefixSlash)) {
+        acc.push(prefixSlash ? file.slice(prefixSlash.length) : file);
+      }
+      return acc;
+    }, []) : [];
     res.json({ branch, dirty: status.length > 0, files: changedPaths.length, changedPaths });
   } catch (err) {
     res.status(500).json({ error: err.message });

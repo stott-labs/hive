@@ -170,7 +170,7 @@ Created through the Metric Creator UI (accessible from the widget picker). Each 
 
 Metrics are saved to `data/metrics.json` and can have configurable refresh intervals. Only `SELECT` queries are allowed — the server rejects any write operations.
 
-[Learn how to create metrics →](../guides/creating-metrics.md)
+[[guides/creating-metrics|Learn how to create metrics →]]
 
 ### Service Log Widgets
 
@@ -188,4 +188,4 @@ Every widget follows the same three-method contract:
 
 3. **`destroy(socket)`** — Called when the widget is removed. Must clean up all Socket.IO listeners and clear any intervals.
 
-[Learn how to build your own widget →](../guides/creating-widgets.md)
+[[guides/creating-widgets|Learn how to build your own widget →]]

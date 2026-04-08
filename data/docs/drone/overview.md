@@ -92,5 +92,5 @@ Restart HIVE. Open `http://localhost:4000/control` for the control panel.
 
 ## What's Next
 
-- [Scenarios and control panel](scenarios.md)
-- [Setting up Drone with HIVE](setup.md)
+- [[drone/scenarios|Scenarios and control panel]]
+- [[drone/setup|Setting up Drone with HIVE]]

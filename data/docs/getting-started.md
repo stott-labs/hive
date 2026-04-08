@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide walks through installing all three projects. Each is independent — you can install just HIVE, or just Hivemind — but they're designed to work together.
+This guide walks through installing all three projects. Each is independent — you can install just HIVE, or just Hivemind — but they're designed to work together. Anything I do here,
 
 ## Prerequisites
 
@@ -146,9 +146,9 @@ These are never committed. Set them in HIVE's `.env` file or your shell environm
 
 ## Next Steps
 
-- [Configure HIVE widgets and layouts](hive/configuration.md)
-- [Learn about all available widgets](hive/widgets.md)
-- [Create custom SQL metric widgets](guides/creating-metrics.md)
-- [Build your own widget](guides/creating-widgets.md)
-- [Explore Hivemind skills](hivemind/skills.md)
-- [Set up Drone scenarios for demos](drone/scenarios.md)
+- [[hive/configuration|Configure HIVE widgets and layouts]]
+- [[hive/widgets|Learn about all available widgets]]
+- [[guides/creating-metrics|Create custom SQL metric widgets]]
+- [[guides/creating-widgets|Build your own widget]]
+- [[hivemind/skills|Explore Hivemind skills]]
+- [[drone/scenarios|Set up Drone scenarios for demos]]

@@ -10,7 +10,7 @@ A self-hosted, browser-based developer dashboard. One tab replaces a dozen. Git 
 
 **Key traits:** Zero cloud dependency. Vanilla JS, no framework. Runs as a detached Node.js process that survives Claude session restarts.
 
-[Read the full HIVE documentation →](hive/overview.md)
+[[hive/overview|Read the full HIVE documentation →]]
 
 ---
 
@@ -20,7 +20,7 @@ A Claude Code `--add-dir` package that gives every repo on your machine the same
 
 **Key traits:** Install once, use everywhere. Org-agnostic codebase with local config. Provider-flexible (Azure DevOps or GitHub).
 
-[Read the full Hivemind documentation →](hivemind/overview.md)
+[[hivemind/overview|Read the full Hivemind documentation →]]
 
 ---
 
@@ -30,7 +30,7 @@ A lightweight Node.js app that generates realistic development activity — real
 
 **Key traits:** Single dependency (Express). Five scripted scenarios with correlated events. Browser control panel.
 
-[Read the full Drone documentation →](drone/overview.md)
+[[drone/overview|Read the full Drone documentation →]]
 
 ---
 
@@ -42,7 +42,7 @@ A lightweight Node.js app that generates realistic development activity — real
 | 2 | **Drone** *(optional)* | Clone and `npm start`. Generates demo data for HIVE. |
 | 3 | **Hivemind** | Clone and run setup. Detects existing config, installs skills system-wide. |
 
-[Quick start guide →](getting-started.md)
+[[getting-started|Quick start guide →]]
 
 ---
 
@@ -52,6 +52,18 @@ A lightweight Node.js app that generates realistic development activity — real
 - **Teams using Claude Code** who want consistent AI workflows across all repositories
 - **Developers** tired of context-switching between ADO/GitHub, Sentry, terminals, and Postman
 - **Anyone curious** about building developer tools with vanilla JS, Socket.IO, and Claude Code skills
+
+## Architecture & Design Records
+
+### [[decisions/_Index|Architecture Decision Records (ADRs)]]
+
+Ten ADRs documenting the *why* behind key design choices — vanilla JS over frameworks, file-based storage over databases, file watchers over process management, and more. Each records the context, decision, alternatives considered, and trade-offs accepted.
+
+### [[implemenations/_Index|Implementation Notes]]
+
+Detailed notes on significant implementation efforts — the setup consolidation that took onboarding from 15 minutes to 2, the layout persistence migration, database connection discovery, and the docs git integration fix.
+
+---
 
 ## Design Philosophy
 

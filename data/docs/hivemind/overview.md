@@ -56,6 +56,6 @@ Developer's Machine
 
 ## What's Next
 
-- [All skills explained](skills.md)
-- [Configuration reference](configuration.md)
-- [Team setup guide](team-setup.md)
+- [[hivemind/skills|All skills explained]]
+- [[hivemind/configuration|Configuration reference]]
+- [[hivemind/team-setup|Team setup guide]]

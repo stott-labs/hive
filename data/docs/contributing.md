@@ -97,7 +97,7 @@ Examples: `feature-42-pipeline-widget`, `bug-99-fix-log-truncation`
 4. If the widget needs server data, add REST endpoints or Socket.IO events to `server.mjs`
 5. Test: add the widget from the picker, refresh, remove, re-add
 
-See [Creating Custom Widgets](guides/creating-widgets.md) for a detailed walkthrough.
+See [[guides/creating-widgets|Creating Custom Widgets]] for a detailed walkthrough.
 
 ## Adding a New Hivemind Skill
 

@@ -100,8 +100,8 @@ hive/
 
 ## What's Next
 
-- [All widgets explained](widgets.md)
-- [Configuration reference](configuration.md)
-- [Server API reference](server-api.md)
-- [Creating custom widgets](../guides/creating-widgets.md)
-- [Creating SQL metric widgets](../guides/creating-metrics.md)
+- [[hive/widgets|All widgets explained]]
+- [[hive/configuration|Configuration reference]]
+- [[hive/server-api|Server API reference]]
+- [[guides/creating-widgets|Creating custom widgets]]
+- [[guides/creating-metrics|Creating SQL metric widgets]]
